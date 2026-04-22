@@ -2,7 +2,7 @@
 // Bootstraps the full web runtime for native app embedding via WKWebView.
 //
 // This file is the app-mode entry point (not the library export).
-// It wires WorkerBridge + providers + WorkbenchShell + ViewManager and mounts the default view.
+// It wires WorkerBridge + providers + SuperWidget + ViewManager and mounts the default view.
 //
 // Loaded by index.html at project root when built with vite.config.native.ts.
 // Also serves as the Vite dev server entry when `npm run dev` is used.
@@ -63,10 +63,10 @@ import { LatchExplorers } from './ui/LatchExplorers';
 import { migrateNotebookContent, NotebookExplorer } from './ui/NotebookExplorer';
 import { ProjectionExplorer } from './ui/ProjectionExplorer';
 import { PropertiesExplorer } from './ui/PropertiesExplorer';
+import { CommandBar } from './ui/CommandBar';
 import { DockNav } from './ui/DockNav';
 import { viewOrder } from './ui/section-defs';
 import { VisualExplorer } from './ui/VisualExplorer';
-import { WorkbenchShell } from './ui/WorkbenchShell';
 import { PanelRegistry } from './ui/panels/PanelRegistry';
 import { PanelManager } from './ui/panels/PanelManager';
 import { MAPS_PANEL_META, mapsPanelFactory } from './ui/panels/MapsPanelStub';
@@ -292,7 +292,7 @@ async function main(): Promise<void> {
 
 	// 7. Create ShortcutRegistry and register all keyboard shortcuts (Phase 44)
 	//    Single keydown listener with built-in input field guard replaces ad-hoc listeners.
-	//    Created before WorkbenchShell so HelpOverlay and CommandPalette are available for callbacks.
+	//    Created before CommandBar so HelpOverlay and CommandPalette are available for callbacks.
 	const shortcuts = new ShortcutRegistry();
 
 	// Undo/redo via ShortcutRegistry (replaces separate setupMutationShortcuts call).
@@ -386,7 +386,7 @@ async function main(): Promise<void> {
 				densityProvider: superDensity,
 			});
 			// Phase 62: Wire CalcExplorer into ProductionSuperGrid for footer row rendering.
-			// calcExplorer is forward-declared — assigned after WorkbenchShell creation.
+			// calcExplorer is forward-declared — assigned after SuperWidget creation.
 			// The closure captures the variable reference, so setCalcExplorer runs with
 			// the actual instance (factory runs after mount, not during init).
 			if (calcExplorer) sg.setCalcExplorer(calcExplorer);
@@ -413,7 +413,6 @@ async function main(): Promise<void> {
 			`Cmd+${num}`,
 			() => {
 				dockNav.setActiveItem('visualize', viewType);
-				const viewContentEl = shell.getViewContentEl();
 				viewContentEl.style.opacity = '0';
 				void viewManager
 					.switchTo(viewType, () => safeViewFactory(viewType)())
@@ -438,7 +437,7 @@ async function main(): Promise<void> {
 		{ category: 'Settings', description: 'Cycle theme (Dark/Light/System)' },
 	);
 
-	// 8. Create HelpOverlay (needed for WorkbenchShell commandBarConfig callbacks)
+	// 8. Create HelpOverlay (needed for CommandBar callbacks)
 	const helpOverlay = new HelpOverlay(shortcuts);
 
 	// 8a. Create CommandRegistry and populate with all app commands (Phase 51, CMDK-01..08)
@@ -455,7 +454,6 @@ async function main(): Promise<void> {
 			shortcut: `Cmd+${num}`,
 			execute: () => {
 				dockNav.setActiveItem('visualize', viewType);
-				const viewContentEl = shell.getViewContentEl();
 				viewContentEl.style.opacity = '0';
 				void viewManager
 					.switchTo(viewType, () => safeViewFactory(viewType)())
@@ -528,7 +526,7 @@ async function main(): Promise<void> {
 		execute: () => { tourEngine?.start(); },
 	});
 
-	// 8b. Create CommandPalette (needed for WorkbenchShell commandBarConfig callbacks)
+	// 8b. Create CommandPalette (needed for CommandBar callbacks)
 	const commandPalette = new CommandPalette(
 		commandRegistry,
 		(query, limit) => bridge.searchCards(query, limit),
@@ -550,38 +548,41 @@ async function main(): Promise<void> {
 		{ category: 'Help', description: 'Command palette' },
 	);
 
-	// 9. Create PanelRegistry + WorkbenchShell
-	//    PanelRegistry created before shell so it can be passed to config.
+	// 9. Create PanelRegistry + SuperWidget (top-level container)
+	//    PanelRegistry created before SuperWidget so it can be passed to panel factories.
 	const panelRegistry = new PanelRegistry();
 
-	const shell = new WorkbenchShell(container, {
-		panelRegistry,
-		bridge,
-		commandBarConfig: {
-			onMenuAction: (action: string) => {
-				if (action === 'importFile') {
-					importFileHandler?.();
-				} else if (action === 'importFromSource') {
-					importNativeHandler?.();
-				} else if (action === 'undo') {
-					void mutationManager.undo();
-				} else if (action === 'redo') {
-					void mutationManager.redo();
-				} else if (action.startsWith('switchView:')) {
-					const viewType = action.slice('switchView:'.length) as ViewType;
-					const viewContentEl = shell.getViewContentEl();
-					viewContentEl.style.opacity = '0';
-					void viewManager
-						.switchTo(viewType, () => safeViewFactory(viewType)())
-						.then(() => {
-							viewContentEl.style.opacity = '1';
-						});
-				}
-			},
+	const commandBar = new CommandBar({
+		onMenuAction: (action: string) => {
+			if (action === 'importFile') {
+				importFileHandler?.();
+			} else if (action === 'importFromSource') {
+				importNativeHandler?.();
+			} else if (action === 'undo') {
+				void mutationManager.undo();
+			} else if (action === 'redo') {
+				void mutationManager.redo();
+			} else if (action.startsWith('switchView:')) {
+				const viewType = action.slice('switchView:'.length) as ViewType;
+				viewContentEl.style.opacity = '0';
+				void viewManager
+					.switchTo(viewType, () => safeViewFactory(viewType)())
+					.then(() => {
+						viewContentEl.style.opacity = '1';
+					});
+			}
 		},
 	});
 
-	// 9a. Create VisualExplorer — mounts inside shell's view-content div,
+	const superWidget = new SuperWidget(getCanvasFactory(), shortcuts, commandBar);
+	superWidget.mount(container);
+
+	// Create view content wrapper inside canvas slot (ViewManager and VisualExplorer mount here)
+	const viewContentEl = document.createElement('div');
+	viewContentEl.className = 'workbench-view-content';
+	superWidget.canvasEl.appendChild(viewContentEl);
+
+	// 9a. Create VisualExplorer — mounts inside SuperWidget's view-content div,
 	//     provides zoom rail alongside SuperGrid content area.
 	//     Phase 94: onDimensionChange wires dimension switching to ViewManager + persistence.
 	const visualExplorer = new VisualExplorer({
@@ -597,11 +598,10 @@ async function main(): Promise<void> {
 			}
 		},
 	});
-	visualExplorer.mount(shell.getViewContentEl());
+	visualExplorer.mount(viewContentEl);
 	visualExplorer.setZoomRailVisible(false); // Default view is 'list', not 'supergrid'
 
 	// Apply crossfade transition class to view content element
-	const viewContentEl = shell.getViewContentEl();
 	viewContentEl.classList.add('view-crossfade');
 
 	// 10. Create ViewManager with visualExplorer.getContentEl() (re-rooted into inner content)
@@ -626,7 +626,7 @@ async function main(): Promise<void> {
 	const auditLegend = new AuditLegend(container);
 	auditOverlay.setLegend(auditLegend);
 
-	// 11. Sidebar navigation — mounts into WorkbenchShell's sidebar column
+	// 11. Sidebar navigation — mounts into SuperWidget's sidebar slot
 
 	// 11b. Data Explorer panel state — assigned by PanelManager factory (mount-once via D-03)
 	let dataExplorer: DataExplorerPanel | null = null;
@@ -643,14 +643,10 @@ async function main(): Promise<void> {
 	// Phase 123 DISC-03: Singleton DirectoryDiscoverySheet — one instance reused across openings
 	const discoverySheet = new DirectoryDiscoverySheet();
 
-	const topSlotEl = shell.getTopSlotEl();
+	const topSlotEl = superWidget.getTopSlotEl();
+	superWidget.canvasEl.prepend(topSlotEl);
 
 	// Phase 152: Create child divs inside top slot — one per explorer (D-01)
-	// Phase 167: dataExplorerChildEl hosts SuperWidget (always visible)
-	const dataExplorerChildEl = document.createElement('div');
-	dataExplorerChildEl.className = 'slot-top__data-explorer';
-	topSlotEl.appendChild(dataExplorerChildEl);
-
 	const propertiesChildEl = document.createElement('div');
 	propertiesChildEl.className = 'slot-top__properties-explorer';
 	propertiesChildEl.style.display = 'none';
@@ -661,13 +657,13 @@ async function main(): Promise<void> {
 	projectionChildEl.style.display = 'none';
 	topSlotEl.appendChild(projectionChildEl);
 
-	/** Show .workbench-slot-top — SuperWidget always visible; also check properties/projection. */
+	/** Show .sw-explorer-slot-top — SuperWidget always visible; also check properties/projection. */
 	function syncTopSlotVisibility(): void {
-		// Phase 167: SuperWidget (dataExplorerChildEl) is always mounted — top slot always visible
 		topSlotEl.style.display = 'block';
 	}
 
-	const bottomSlotEl = shell.getBottomSlotEl();
+	const bottomSlotEl = superWidget.getBottomSlotEl();
+	superWidget.canvasEl.appendChild(bottomSlotEl);
 
 	// Phase 153: Create child divs inside bottom slot — one per explorer (D-05)
 	const latchFiltersChildEl = document.createElement('div');
@@ -704,7 +700,7 @@ async function main(): Promise<void> {
 
 	async function handleDatasetSwitch(datasetId: string, datasetName: string): Promise<void> {
 		// Show loading state immediately in command bar
-		shell.getCommandBar().setSubtitle('Loading\u2026');
+		commandBar.setSubtitle('Loading\u2026');
 		viewManager.showLoading();
 		await sampleManager.evictAll();
 
@@ -738,7 +734,7 @@ async function main(): Promise<void> {
 		coordinator.scheduleUpdate();
 		await viewManager.switchTo('list', () => viewFactory['list']());
 		// Show dataset name after switch completes
-		shell.getCommandBar().setSubtitle(datasetName);
+		commandBar.setSubtitle(datasetName);
 		void refreshDataExplorer();
 
 		// Check for dataset-preset association and show suggestion toast (Phase 133)
@@ -878,7 +874,6 @@ async function main(): Promise<void> {
 				// Visualize section can still switch views without panelManager
 				if (sectionKey === 'visualize') {
 					const viewType = itemKey as ViewType;
-					const viewContentEl = shell.getViewContentEl();
 					viewContentEl.style.opacity = '0';
 					void viewManager
 						.switchTo(viewType, () => safeViewFactory(viewType)())
@@ -930,7 +925,6 @@ async function main(): Promise<void> {
 			// Visualize section — view switching stays here (per D-04), projection auto-visibility
 			if (sectionKey === 'visualize') {
 				const viewType = itemKey as ViewType;
-				const viewContentEl = shell.getViewContentEl();
 				viewContentEl.style.opacity = '0';
 				void viewManager
 					.switchTo(viewType, () => safeViewFactory(viewType)())
@@ -978,7 +972,7 @@ async function main(): Promise<void> {
 		},
 		announcer,
 	});
-	dockNav.mount(shell.getSidebarEl());
+	dockNav.mount(superWidget.sidebarEl);
 
 	// 11-minimap. Wire minimap thumbnail data source, navigate callback, and re-render triggers.
 	dockNav.setThumbnailDataSource(() => {
@@ -1052,7 +1046,7 @@ async function main(): Promise<void> {
 			})) as { rows: Array<Record<string, unknown>> } | null;
 			const _bootDs = _bootDsResult?.rows?.[0];
 			if (_bootDs?.['name']) {
-				shell.getCommandBar().setSubtitle(String(_bootDs['name']));
+				commandBar.setSubtitle(String(_bootDs['name']));
 			}
 			// Restore activeSourceType at boot so sidebar recommendations badge is correct
 			if (_bootDs?.['source_type']) {
@@ -1236,11 +1230,7 @@ async function main(): Promise<void> {
 	mutationManager.setToast(actionToast);
 
 	// 14a-2. Create LayoutPresetManager and wire preset commands into command palette (Phase 133)
-	presetManager = new LayoutPresetManager(
-		() => shell.getSectionStates(),
-		(states) => shell.restoreSectionStates(states),
-		bridge,
-	);
+	presetManager = new LayoutPresetManager(bridge);
 	await presetManager.loadCustomPresets();
 	createPresetCommands({
 		presetManager,
@@ -1248,7 +1238,6 @@ async function main(): Promise<void> {
 		palette: commandPalette,
 		actionToast,
 		mutationManager,
-		restoreSectionStates: (states) => shell.restoreSectionStates(states),
 		getActiveDatasetId: () => sm.getActiveDatasetId(),
 	});
 
@@ -1637,10 +1626,6 @@ async function main(): Promise<void> {
 		}),
 	});
 
-	// Phase 167: Mount SuperWidget into the top slot (replaces sidebar DataExplorerPanel)
-	const superWidget = new SuperWidget(getCanvasFactory());
-	superWidget.mount(dataExplorerChildEl);
-
 	// Commit initial Explorer projection — triggers ExplorerCanvas.mount()
 	const initialProjection: Projection = {
 		canvasType: 'Explorer',
@@ -1948,7 +1933,7 @@ async function main(): Promise<void> {
 		themeProvider: theme,
 		commandRegistry,
 		commandPalette,
-		shell,
+		superWidget,
 		visualExplorer,
 		latchExplorers,
 		notebookExplorer,

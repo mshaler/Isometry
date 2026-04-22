@@ -33,17 +33,9 @@ export class LayoutPresetManager {
 	/** Custom presets loaded from ui_state, keyed by preset name */
 	private readonly _custom = new Map<string, Record<string, boolean>>();
 
-	private readonly _getSectionStates: () => Map<string, boolean>;
-	private readonly _restoreSectionStates: (states: Map<string, boolean>) => void;
 	private readonly _bridge: Bridge;
 
-	constructor(
-		getSectionStates: () => Map<string, boolean>,
-		restoreSectionStates: (states: Map<string, boolean>) => void,
-		bridge: Bridge,
-	) {
-		this._getSectionStates = getSectionStates;
-		this._restoreSectionStates = restoreSectionStates;
+	constructor(bridge: Bridge) {
 		this._bridge = bridge;
 	}
 
@@ -93,20 +85,14 @@ export class LayoutPresetManager {
 	}
 
 	/**
-	 * Applies a preset by name. Calls restoreSectionStates with the preset's Map.
-	 * Returns the previous states as a Record for undo, or null if preset not found.
+	 * Applies a preset by name. Returns the previous states as a Record for undo, or null if preset not found.
 	 */
 	applyPreset(name: string): Record<string, boolean> | null {
 		const panels = this.getPreset(name);
 		if (panels === null) return null;
 
-		// Capture current state before applying
+		// Capture current state before applying (no-op — section states removed)
 		const prev = this.captureCurrentState();
-
-		// Convert Record to Map and restore
-		const stateMap = new Map<string, boolean>(Object.entries(panels));
-		this._restoreSectionStates(stateMap);
-
 		return prev;
 	}
 
@@ -149,13 +135,9 @@ export class LayoutPresetManager {
 
 	/**
 	 * Capture the current section states as a Record<storageKey, boolean>.
+	 * Section states are no longer tracked (D-04) — returns empty record.
 	 */
 	captureCurrentState(): Record<string, boolean> {
-		const stateMap = this._getSectionStates();
-		const record: Record<string, boolean> = {};
-		for (const [k, v] of stateMap) {
-			record[k] = v;
-		}
-		return record;
+		return {};
 	}
 }

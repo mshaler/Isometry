@@ -23,8 +23,6 @@ export interface PresetCommandsDeps {
 	actionToast: ActionToast;
 	/** MutationManager for registering undoable preset apply (D-11). Optional for backward compat. */
 	mutationManager?: MutationManager;
-	/** Restores section states — required when mutationManager is provided. */
-	restoreSectionStates?: (states: Map<string, boolean>) => void;
 	/** Returns the active dataset ID for setAssociation wiring. Optional. */
 	getActiveDatasetId?: () => string | null;
 }
@@ -40,7 +38,7 @@ export interface PresetCommandsDeps {
  * Commands refresh dynamically after save/delete via internal refreshCommands().
  */
 export function createPresetCommands(deps: PresetCommandsDeps): void {
-	const { presetManager, registry, palette, actionToast, mutationManager, restoreSectionStates, getActiveDatasetId } = deps;
+	const { presetManager, registry, palette, actionToast, mutationManager, getActiveDatasetId } = deps;
 
 	function refreshCommands(): void {
 		// Remove all previously registered preset:* commands
@@ -57,22 +55,16 @@ export function createPresetCommands(deps: PresetCommandsDeps): void {
 				label: `Apply Preset: ${name}`,
 				category: 'Presets',
 				execute: () => {
-					if (mutationManager && restoreSectionStates) {
+					if (mutationManager) {
 						// Route through MutationManager for undo support (D-11).
-						// Capture prev state first, then apply once via forward().
-						const presetPanels = presetManager.getPreset(name);
-						if (presetPanels) {
-							const presetMap = new Map(Object.entries(presetPanels));
-							const prevRecord = presetManager.captureCurrentState();
-							const prevMap = new Map(Object.entries(prevRecord));
-							void mutationManager.execute({
-								id: crypto.randomUUID(),
-								timestamp: Date.now(),
-								description: `Applied preset \u201C${name}\u201D`,
-								forward: () => restoreSectionStates(presetMap),
-								inverse: () => restoreSectionStates(prevMap),
-							});
-						}
+						// Section states are no longer tracked (D-04) — record is a no-op stub.
+						void mutationManager.execute({
+							id: crypto.randomUUID(),
+							timestamp: Date.now(),
+							description: `Applied preset \u201C${name}\u201D`,
+							forward: () => { /* section states removed */ },
+							inverse: () => { /* section states removed */ },
+						});
 					} else {
 						// No mutation manager — apply directly (no undo support).
 						presetManager.applyPreset(name);
