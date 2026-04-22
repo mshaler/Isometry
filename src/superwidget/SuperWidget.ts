@@ -41,8 +41,9 @@ export class SuperWidget {
   private _activeTabSlotId: string = '';
   private _shortcuts: ShortcutRegistry | undefined;
   private _commandBar: CommandBar | undefined;
-  private _topPassthroughEl: HTMLElement;
-  private _bottomPassthroughEl: HTMLElement;
+  private _sidecarEl: HTMLElement;
+  private _sidecarTopEl: HTMLElement;
+  private _sidecarBottomEl: HTMLElement;
 
   constructor(canvasFactory: CanvasFactory, shortcuts?: ShortcutRegistry, commandBar?: CommandBar) {
     this._canvasFactory = canvasFactory;
@@ -102,20 +103,28 @@ export class SuperWidget {
     this._statusEl = document.createElement('div');
     this._statusEl.dataset['slot'] = 'status';
 
-    // Explorer passthrough slots (D-02) — caller places these as needed
-    this._topPassthroughEl = document.createElement('div');
-    this._topPassthroughEl.className = 'sw-explorer-slot-top';
-    this._bottomPassthroughEl = document.createElement('div');
-    this._bottomPassthroughEl.className = 'sw-explorer-slot-bottom';
+    // Sidecar slot (3rd grid column — spans all rows, per D-01)
+    this._sidecarEl = document.createElement('aside');
+    this._sidecarEl.dataset['slot'] = 'sidecar';
+    this._sidecarEl.setAttribute('aria-label', 'Explorer panel');
 
-    // Append slots to root: sidebar first (accessibility), then header/tabs/canvas/status
+    this._sidecarTopEl = document.createElement('div');
+    this._sidecarTopEl.dataset['sidecarSlot'] = 'top-slot';
+    this._sidecarBottomEl = document.createElement('div');
+    this._sidecarBottomEl.dataset['sidecarSlot'] = 'bottom-slot';
+
+    this._sidecarEl.appendChild(this._sidecarTopEl);
+    this._sidecarEl.appendChild(this._sidecarBottomEl);
+
+    // Append slots to root: sidebar first (accessibility), then header/tabs/canvas/status/sidecar
     this._root.appendChild(this._sidebarEl);
     this._root.appendChild(this._headerEl);
     this._root.appendChild(this._tabsEl);
     this._root.appendChild(this._canvasEl);
     this._root.appendChild(this._statusEl);
+    this._root.appendChild(this._sidecarEl);
 
-    // Initialize render-count tracking on all five slots (D-05)
+    // Initialize render-count tracking on all five main slots (D-05)
     this._sidebarEl.dataset['renderCount'] = '0';
     this._headerEl.dataset['renderCount'] = '0';
     this._canvasEl.dataset['renderCount'] = '0';
@@ -142,11 +151,24 @@ export class SuperWidget {
       this._currentCanvas = null;
     }
     this._currentProjection = null;
+    delete this._root.dataset['sidecarVisible'];
     this._shortcuts?.unregister('Cmd+W');
     this._commandBar?.destroy();
     this._tabBar.destroy();
     this._root.remove();
     this._mounted = false;
+  }
+
+  /**
+   * Show or hide the sidecar column via data attribute (CSS grid transition).
+   * Does not trigger any canvas re-renders or Worker re-queries.
+   */
+  setSidecarVisible(visible: boolean): void {
+    if (visible) {
+      this._root.dataset['sidecarVisible'] = 'true';
+    } else {
+      delete this._root.dataset['sidecarVisible'];
+    }
   }
 
   private _switchToTab(tabId: string): void {
@@ -284,9 +306,10 @@ export class SuperWidget {
   // CommandBar accessor (D-03, D-06)
   getCommandBar(): CommandBar | undefined { return this._commandBar; }
 
-  // Temporary explorer passthrough accessors (D-02) — Phase 176 replaces with real sidecar
-  getTopSlotEl(): HTMLElement { return this._topPassthroughEl; }
-  getBottomSlotEl(): HTMLElement { return this._bottomPassthroughEl; }
+  // Sidecar slot accessors (Phase 176)
+  get sidecarTopEl(): HTMLElement { return this._sidecarTopEl; }
+  get sidecarBottomEl(): HTMLElement { return this._sidecarBottomEl; }
+  get sidecarEl(): HTMLElement { return this._sidecarEl; }
 
   // Tab state getters (for Plan 03 and Phase 177)
   get tabs(): readonly TabSlot[] { return this._tabs; }

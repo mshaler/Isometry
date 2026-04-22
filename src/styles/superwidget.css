@@ -27,23 +27,30 @@
   --sw-chevron-size: 28px;
   --sw-tab-drag-opacity: 0.45;
   --sw-insertion-line-color: var(--accent);
+  --sw-sidecar-width: 280px;
 
   /* -------------------------------------------------------------------------
-   * Root layout — CSS Grid 5-slot (sidebar + 4 rows), flex participant (SLAT-07)
+   * Root layout — CSS Grid 3-column (sidebar | canvas | sidecar), flex participant (SLAT-07)
    * flex: 1 1 auto + min-height: 0 prevents height collapse in flex chain
+   * sidecar starts at 0 width; transitions to --sw-sidecar-width when visible
    * ---------------------------------------------------------------------- */
   display: grid;
-  grid-template-columns: auto 1fr;
+  grid-template-columns: auto 1fr 0;
   grid-template-rows: auto auto 1fr auto;
   grid-template-areas:
-    "sidebar header"
-    "sidebar tabs"
-    "sidebar canvas"
-    "sidebar status";
+    "sidebar header  sidecar"
+    "sidebar tabs    sidecar"
+    "sidebar canvas  sidecar"
+    "sidebar status  sidecar";
+  transition: grid-template-columns var(--transition-normal) ease;
   flex: 1 1 auto;
   min-height: 0;
   background: var(--bg-primary);
   font-family: var(--font-sans);
+}
+
+[data-component="superwidget"][data-sidecar-visible="true"] {
+  grid-template-columns: auto 1fr var(--sw-sidecar-width);
 }
 
 /* ---------------------------------------------------------------------------
@@ -356,27 +363,27 @@
 }
 
 /* ---------------------------------------------------------------------------
- * Temporary explorer passthrough slots (D-02) — Phase 176 replaces with sidecar
+ * Sidecar slot — 3rd grid column, spans all 4 rows (Phase 176)
  * -------------------------------------------------------------------------- */
 
-.sw-explorer-slot-top {
-  box-sizing: border-box;
-  width: 100%;
-  flex-shrink: 0;
-  max-height: 50vh;
-  overflow: hidden auto;
-  background: var(--bg-primary);
-  border-bottom: 1px solid var(--border-subtle);
-  padding: var(--space-md);
+[data-component="superwidget"] [data-slot="sidecar"] {
+  grid-area: sidecar;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-surface);
+  overflow: hidden;
+  border-left: 1px solid var(--border-subtle);
+  min-width: 0;
 }
 
-.sw-explorer-slot-bottom {
-  box-sizing: border-box;
-  width: 100%;
-  flex-shrink: 0;
-  max-height: 30vh;
+[data-component="superwidget"] [data-sidecar-slot="top-slot"] {
+  flex: 1 1 auto;
   overflow: hidden auto;
-  background: var(--bg-primary);
-  border-top: 1px solid var(--border-subtle);
-  padding: var(--space-md);
+  min-height: 0;
+}
+
+[data-component="superwidget"] [data-sidecar-slot="bottom-slot"] {
+  flex: 0 0 auto;
+  max-height: 40%;
+  overflow: hidden auto;
 }
