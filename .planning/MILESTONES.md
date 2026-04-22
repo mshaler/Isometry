@@ -1,5 +1,18 @@
 # Milestones
 
+## v13.2 View + Editor Canvases (Shipped: 2026-04-22)
+
+**Phases completed:** 3 phases, 3 plans, 6 tasks
+
+**Key accomplishments:**
+
+- ViewCanvas production CanvasComponent wrapping ViewManager with wrapper-div isolation, status slot rendering, and per-view sidecar signaling via VIEW_SIDECAR_MAP
+- EditorCanvas wrapping NotebookExplorer with SelectionProvider-driven status slot and safe destroy lifecycle (timer cancel, flush, 4-handle unsub)
+- Playwright WebKit CI hard gate covering 6-direction canvas transitions, 9-view DOM leak detection, and rapid-burst stress test
+- CANV-06 invariant extended — readFileSync assertions on both stub and real class names (5 total), SuperWidget.ts has zero concrete canvas imports
+
+---
+
 ## v13.1 Data Explorer Canvas (Shipped: 2026-04-21)
 
 **Phases completed:** 4 phases, 8 plans, 4 tasks

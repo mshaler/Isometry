@@ -309,16 +309,14 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 
 ## Current State
 
-**Latest milestone shipped:** v13.1 Data Explorer Canvas (shipped 2026-04-21)
-**Total milestones shipped:** 39 (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0, v3.1, v4.0, v4.1, v4.2, v4.3, v4.4, v5.0, v5.1, v5.2, v5.3, v6.0, v6.1, v7.0, v7.1, v7.2, v8.0, v8.1, v8.2, v8.3, v8.4, v8.5, v9.0, v9.1, v9.2, v9.3, v10.0, v10.1, v10.2, v11.0, v11.1, v12.0, v13.0, v13.1)
-**Current milestone:** v13.2 View + Editor Canvases
-**v13.1 complete:** ExplorerCanvas production CanvasComponent replacing stub — DataExplorerPanel wrapped with mount/destroy lifecycle, 3-tab system (Import/Export, Catalog, DB Utilities) driven by Projection state, live status slot (card count, connection count, last import), 8 cross-seam Vitest integration tests + Playwright WebKit E2E smoke. 206+ superwidget tests, 13/13 requirements. Phases 167–170.
-**Phase 172 complete:** EditorCanvas production CanvasComponent — NotebookExplorer mounted in SuperWidget canvas slot with SelectionProvider-driven status display and safe destroy lifecycle. 17 new tests, 245/245 superwidget tests passing. 4/4 ECNV requirements verified.
-**Phase 173 complete:** 3-Canvas E2E Gate — Playwright WebKit CI hard gate covering all 6 directional canvas transitions, 9-view DOM leak detection, CANV-06 import invariant with real class name assertions, and rapid-switching stress test. 3 E2E tests + 2 CANV-06 unit assertions. 4/4 INTG requirements verified. v13.2 graduation gate.
+**Latest milestone shipped:** v13.2 View + Editor Canvases (shipped 2026-04-22)
+**Total milestones shipped:** 40 (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0, v3.1, v4.0, v4.1, v4.2, v4.3, v4.4, v5.0, v5.1, v5.2, v5.3, v6.0, v6.1, v7.0, v7.1, v7.2, v8.0, v8.1, v8.2, v8.3, v8.4, v8.5, v9.0, v9.1, v9.2, v9.3, v10.0, v10.1, v10.2, v11.0, v11.1, v12.0, v13.0, v13.1, v13.2)
+**Current milestone:** None — planning next milestone
+**v13.2 complete:** All 3 CanvasComponent stubs replaced with production implementations. ViewCanvas wraps ViewManager with 9-view switching and sidecar signaling. EditorCanvas wraps NotebookExplorer with SelectionProvider binding and safe destroy. Playwright WebKit CI hard gate covers all 6 directional transitions, 9-view DOM leak detection, CANV-06 import invariant, and rapid-switching stress. 13/13 requirements, 3 phases (171-173).
 
 ## Context
 
-v13.1 shipped the first real CanvasComponent — ExplorerCanvas wraps DataExplorerPanel with 3-tab navigation (Import/Export, Catalog, DB Utilities) driven by Projection state, plus a live status slot showing card count, connection count, and last import timestamp. The SuperWidget substrate (v13.0) now has one production canvas (Explorer) and two remaining stubs (View, Editor). 206+ superwidget tests, Playwright WebKit CI smoke with dedicated explorercanvas-harness. Next: SuperGrid View Canvas (v13.2) and Card Editor Canvas (v13.3).
+v13.2 completed the SuperWidget canvas system — all 3 CanvasComponent stubs (Explorer, View, Editor) are now production implementations. ViewCanvas wraps ViewManager with wrapper-div isolation, per-view sidecar signaling via VIEW_SIDECAR_MAP, and status slot rendering. EditorCanvas wraps NotebookExplorer with SelectionProvider-driven status and safe destroy lifecycle (timer cancel, content flush, 4-handle unsub). A Playwright WebKit CI hard gate verifies all 6 directional transitions, 9-view DOM leak detection, and rapid-switching stress. CANV-06 invariant holds — SuperWidget.ts has zero concrete canvas imports. 245+ superwidget tests, 3 E2E specs.
 
 Shipped v11.1 Dock/Explorer Inline Embedding (9 phases, 13 plans). v11.0 replaced SidebarNav with DockNav (48px vertical icon strip, verb-noun taxonomy, 3-state collapse with CSS animation, ARIA tablist keyboard navigation, MinimapRenderer with loupe overlay, explorer decoupling to main panel). v11.1 removed PanelDrawer entirely and embedded explorers inline: Data+Properties toggle above view from Integrate dock, Projections auto-visible for SuperGrid, LATCH Filters+Formulas toggle below view from Analyze dock with cross-view persistence. Phase 150 (iOS Stories Splash) deferred pending product decision. ~52K TS src + ~81K TS tests + ~7.3K CSS + ~12K Swift LOC, across 36 milestones and 154 phases.
 Web runtime stack: TypeScript 5.9 (strict), sql.js 1.14 (custom FTS5 WASM 756KB), D3.js v7.9, Vite 7.3, Vitest 4.0, Biome 2.4.6, Playwright.
@@ -683,4 +681,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-22 after Phase 173 (3-Canvas E2E Gate) complete*
+*Last updated: 2026-04-22 after v13.2 milestone*
