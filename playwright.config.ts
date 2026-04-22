@@ -32,7 +32,7 @@ export default defineConfig({
 		{
 			name: 'webkit',
 			use: { ...devices['Desktop Safari'] },
-			testMatch: '**/superwidget-smoke.spec.ts',
+			testMatch: ['**/superwidget-smoke.spec.ts', '**/canvas-e2e-gate.spec.ts'],
 		},
 	],
 	webServer: {
