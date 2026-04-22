@@ -53,12 +53,12 @@ All phases 1-173 are archived in `.planning/milestones/` under their respective 
 
 #### Phase 174: Tab Management
 
-- [ ] **Phase 174: Tab Management** - Establish TabSlot type and full tab bar UX (create/close/reorder/switch, keyboard nav, overflow)
+- [x] **Phase 174: Tab Management** - Establish TabSlot type and full tab bar UX (create/close/reorder/switch, keyboard nav, overflow) (completed 2026-04-22)
 
 Plans:
 - [x] 174-01-PLAN.md — TabSlot type + CanvasComponent TabMetadata extension
 - [x] 174-02-PLAN.md — TabBar core (create/close/switch/active/overflow) + SuperWidget wiring + CSS overhaul
-- [ ] 174-03-PLAN.md — Drag reorder, keyboard nav, Cmd+W shortcut, metadata callback wiring
+- [x] 174-03-PLAN.md — Drag reorder, keyboard nav, Cmd+W shortcut, metadata callback wiring
 
 #### Phase 175: Shell Replacement
 
@@ -128,7 +128,7 @@ Plans:
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 174. Tab Management | v13.3 | 2/3 | In Progress|  |
+| 174. Tab Management | v13.3 | 3/3 | Complete   | 2026-04-22 |
 | 175. Shell Replacement | v13.3 | 0/? | Not started | - |
 | 176. Explorer Sidecar + Status Slots | v13.3 | 0/? | Not started | - |
 | 177. Tab Persistence | v13.3 | 0/? | Not started | - |

@@ -13,10 +13,10 @@ Requirements for v13.3. Each maps to roadmap phases.
 - [x] **TABS-02**: User can close a tab via × button (last tab cannot be closed)
 - [x] **TABS-03**: User can switch between tabs by clicking tab headers
 - [x] **TABS-04**: Active tab has a visible indicator distinguishing it from inactive tabs
-- [ ] **TABS-05**: User can reorder tabs via pointer drag-and-drop
+- [x] **TABS-05**: User can reorder tabs via pointer drag-and-drop
 - [x] **TABS-06**: Tab bar shows overflow chevrons when tabs exceed available width
-- [ ] **TABS-07**: User can navigate tabs via keyboard (roving tabindex, arrow keys)
-- [ ] **TABS-08**: User can close active tab via Cmd+W shortcut
+- [x] **TABS-07**: User can navigate tabs via keyboard (roving tabindex, arrow keys)
+- [x] **TABS-08**: User can close active tab via Cmd+W shortcut
 - [x] **TABS-09**: TabSlot type wraps Projection without conflating shell-level tabs with canvas-internal tabs
 - [x] **TABS-10**: Tab metadata (canvas type label, badge) flows upward via onTabMetadataChange callback (CANV-06 preserved)
 
@@ -88,10 +88,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | TABS-02 | Phase 174 | Complete |
 | TABS-03 | Phase 174 | Complete |
 | TABS-04 | Phase 174 | Complete |
-| TABS-05 | Phase 174 | Pending |
+| TABS-05 | Phase 174 | Complete |
 | TABS-06 | Phase 174 | Complete |
-| TABS-07 | Phase 174 | Pending |
-| TABS-08 | Phase 174 | Pending |
+| TABS-07 | Phase 174 | Complete |
+| TABS-08 | Phase 174 | Complete |
 | TABS-09 | Phase 174 | Complete |
 | TABS-10 | Phase 174 | Complete |
 | SHEL-01 | Phase 175 | Pending |
