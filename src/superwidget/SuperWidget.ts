@@ -1,6 +1,9 @@
 import '../styles/superwidget.css';
 import { validateProjection } from './projection';
 import type { CanvasBinding, CanvasComponent, Projection, ZoneRole } from './projection';
+import { TabBar } from './TabBar';
+import { makeTabSlot, removeTab } from './TabSlot';
+import type { TabSlot } from './TabSlot';
 
 export type CanvasFactory = (canvasId: string, binding: CanvasBinding) => CanvasComponent | undefined;
 
@@ -30,6 +33,9 @@ export class SuperWidget {
   private _canvasFactory: CanvasFactory;
   private _currentCanvas: CanvasComponent | null = null;
   private _currentProjection: Projection | null = null;
+  private _tabBar: TabBar;
+  private _tabs: TabSlot[] = [];
+  private _activeTabSlotId: string = '';
 
   constructor(canvasFactory: CanvasFactory) {
     this._canvasFactory = canvasFactory;
@@ -46,24 +52,20 @@ export class SuperWidget {
     this._tabsEl = document.createElement('div');
     this._tabsEl.dataset['slot'] = 'tabs';
 
-    // Placeholder tab buttons
-    const tabLabels = ['Tab 1', 'Tab 2', 'Tab 3'];
-    tabLabels.forEach((label, i) => {
-      const btn = document.createElement('button');
-      btn.dataset['tabRole'] = 'tab';
-      btn.textContent = label;
-      if (i === 0) {
-        btn.dataset['tabActive'] = 'true';
-      }
-      this._tabsEl.appendChild(btn);
-    });
+    // Initialize with a single default tab (D-01: View Bound)
+    const defaultTab = makeTabSlot();
+    this._tabs = [defaultTab];
+    this._activeTabSlotId = defaultTab.tabId;
 
-    // Config gear button
-    const configBtn = document.createElement('button');
-    configBtn.dataset['tabRole'] = 'config';
-    configBtn.textContent = '\u2699';
-    configBtn.setAttribute('aria-label', 'Configure');
-    this._tabsEl.appendChild(configBtn);
+    // Create TabBar and append to tabs slot
+    this._tabBar = new TabBar({
+      tabs: this._tabs,
+      activeTabId: this._activeTabSlotId,
+      onSwitch: (tabId) => this._switchToTab(tabId),
+      onCreate: () => this._createTab(),
+      onClose: (tabId) => this._closeTab(tabId),
+    });
+    this._tabsEl.appendChild(this._tabBar.el);
 
     // Canvas slot
     this._canvasEl = document.createElement('div');
@@ -105,8 +107,44 @@ export class SuperWidget {
       this._currentCanvas = null;
     }
     this._currentProjection = null;
+    this._tabBar.destroy();
     this._root.remove();
     this._mounted = false;
+  }
+
+  private _switchToTab(tabId: string): void {
+    if (tabId === this._activeTabSlotId) return;
+    const slot = this._tabs.find(t => t.tabId === tabId);
+    if (!slot) return;
+    this._activeTabSlotId = tabId;
+    this._tabBar.update(this._tabs, this._activeTabSlotId);
+    this.commitProjection(slot.projection);
+  }
+
+  private _createTab(): void {
+    const newTab = makeTabSlot();
+    this._tabs = [...this._tabs, newTab];
+    this._activeTabSlotId = newTab.tabId;
+    this._tabBar.update(this._tabs, this._activeTabSlotId);
+    this.commitProjection(newTab.projection);
+    requestAnimationFrame(() => this._tabBar.scrollToTab(newTab.tabId));
+  }
+
+  private _closeTab(tabId: string): void {
+    if (this._tabs.length <= 1) return;
+    const closedIndex = this._tabs.findIndex(t => t.tabId === tabId);
+    if (closedIndex === -1) return;
+
+    // D-04: activate adjacent tab (right, or left if rightmost closed)
+    if (tabId === this._activeTabSlotId) {
+      const nextIndex = closedIndex < this._tabs.length - 1 ? closedIndex + 1 : closedIndex - 1;
+      this._activeTabSlotId = this._tabs[nextIndex]!.tabId;
+    }
+
+    this._tabs = removeTab(this._tabs, tabId) as TabSlot[];
+    this._tabBar.update(this._tabs, this._activeTabSlotId);
+    const activeSlot = this._tabs.find(t => t.tabId === this._activeTabSlotId);
+    if (activeSlot) this.commitProjection(activeSlot.projection);
   }
 
   /**
@@ -181,4 +219,8 @@ export class SuperWidget {
   get tabsEl(): HTMLElement { return this._tabsEl; }
   get rootEl(): HTMLElement { return this._root; }
   get mounted(): boolean { return this._mounted; }
+
+  // Tab state getters (for Plan 03 and Phase 177)
+  get tabs(): readonly TabSlot[] { return this._tabs; }
+  get activeTabSlotId(): string { return this._activeTabSlotId; }
 }

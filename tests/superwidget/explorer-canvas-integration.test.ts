@@ -5,6 +5,15 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SuperWidget } from '../../src/superwidget/SuperWidget';
+
+// jsdom does not implement ResizeObserver — provide a minimal stub
+if (typeof ResizeObserver === 'undefined') {
+  (globalThis as Record<string, unknown>)['ResizeObserver'] = class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  };
+}
 import { clearRegistry, getCanvasFactory, register, registerAllStubs } from '../../src/superwidget/registry';
 import { ExplorerCanvas } from '../../src/superwidget/ExplorerCanvas';
 import { renderStatusSlot, updateStatusSlot } from '../../src/superwidget/statusSlot';

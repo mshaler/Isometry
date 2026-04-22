@@ -22,6 +22,11 @@
   --sw-slot-border: var(--border-subtle);
   --sw-header-padding-x: var(--space-sm);
   --sw-header-padding-y: var(--space-xs);
+  --sw-tab-max-width: 120px;
+  --sw-tab-close-size: 16px;
+  --sw-chevron-size: 28px;
+  --sw-tab-drag-opacity: 0.45;
+  --sw-insertion-line-color: var(--accent);
 
   /* -------------------------------------------------------------------------
    * Root layout — CSS Grid 4-row, flex participant (SLAT-07)
@@ -51,30 +56,115 @@
 }
 
 /* ---------------------------------------------------------------------------
- * Tabs slot — scrolling flex row with edge fade (SLAT-04)
+ * Tabs slot — chevron-navigated strip container (D-09, D-10)
  * -------------------------------------------------------------------------- */
 
 [data-component="superwidget"] [data-slot="tabs"] {
   display: flex;
   flex-direction: row;
-  overflow-x: auto;
-  scrollbar-width: none;
+  overflow: hidden;
   background: var(--sw-tabs-bg);
-  gap: var(--sw-tab-gap);
   padding: var(--space-xs) var(--space-sm);
   border-bottom: 1px solid var(--sw-slot-border);
   align-items: center;
-  mask-image: linear-gradient(
-    to right,
-    transparent,
-    black var(--sw-fade-width),
-    black calc(100% - var(--sw-fade-width)),
-    transparent
-  );
 }
 
-[data-component="superwidget"] [data-slot="tabs"]::-webkit-scrollbar {
+/* Tab strip — inner scrolling container (D-09, D-10) */
+[data-component="superwidget"] .sw-tab-strip {
+  display: flex;
+  flex-direction: row;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-x: scroll;
+  scrollbar-width: none;
+  gap: var(--sw-tab-gap);
+  align-items: center;
+}
+
+[data-component="superwidget"] .sw-tab-strip::-webkit-scrollbar {
   display: none;
+}
+
+/* Overflow chevrons */
+[data-component="superwidget"] .sw-tab-strip__chevron {
+  flex-shrink: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: var(--sw-tab-font-size);
+  border-radius: var(--sw-tab-radius);
+  cursor: pointer;
+  padding: 0;
+}
+
+[data-component="superwidget"] .sw-tab-strip__chevron:hover {
+  background: var(--bg-card);
+  color: var(--text-primary);
+}
+
+/* Add tab button */
+[data-component="superwidget"] .sw-tab-strip__add {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: var(--sw-tab-font-size);
+  border-radius: var(--sw-tab-radius);
+  cursor: pointer;
+  padding: 0;
+  margin-left: var(--sw-tab-gap);
+}
+
+[data-component="superwidget"] .sw-tab-strip__add:hover {
+  color: var(--accent);
+}
+
+/* Close button inside tab */
+[data-component="superwidget"] .sw-tab__close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  margin-left: var(--space-xs);
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 10px;
+  border-radius: 2px;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+[data-component="superwidget"] .sw-tab__close:hover {
+  color: var(--danger);
+  background: var(--danger-bg);
+}
+
+/* Tab label truncation */
+[data-component="superwidget"] .sw-tab__label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
+}
+
+/* Tab badge */
+[data-component="superwidget"] .sw-tab__badge {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  margin-left: var(--space-xs);
 }
 
 /* ---------------------------------------------------------------------------
@@ -124,26 +214,6 @@
   color: white;
 }
 
-/* ---------------------------------------------------------------------------
- * Config gear — right-aligned via margin-left: auto (SLAT-02)
- * -------------------------------------------------------------------------- */
-
-[data-component="superwidget"] [data-tab-role="config"] {
-  margin-left: auto;
-  flex-shrink: 0;
-  background: transparent;
-  border: none;
-  color: var(--text-muted);
-  font-size: var(--sw-tab-font-size);
-  padding: var(--sw-tab-padding-y) var(--sw-tab-padding-x);
-  border-radius: var(--sw-tab-radius);
-  cursor: pointer;
-}
-
-[data-component="superwidget"] [data-tab-role="config"]:hover {
-  background: var(--bg-card);
-  color: var(--text-primary);
-}
 
 /* ---------------------------------------------------------------------------
  * Explorer canvas wrapper — Phase 167

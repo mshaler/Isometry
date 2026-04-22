@@ -9,6 +9,15 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { SuperWidget } from '../../src/superwidget/SuperWidget';
 import type { CanvasFactory } from '../../src/superwidget/SuperWidget';
 
+// jsdom does not implement ResizeObserver — provide a minimal stub
+if (typeof ResizeObserver === 'undefined') {
+  (globalThis as Record<string, unknown>)['ResizeObserver'] = class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  };
+}
+
 const stubFactory: CanvasFactory = () => ({
   mount: () => {},
   destroy: () => {},
@@ -131,10 +140,10 @@ describe('SuperWidget slots (SLAT-01)', () => {
 });
 
 // ---------------------------------------------------------------------------
-// SLAT-02: Config gear is last child in tabs with data-tab-role="config"
+// SLAT-02: TabBar wired into tabs slot (Plan 174-02 replacement for config gear)
 // ---------------------------------------------------------------------------
 
-describe('Config gear (SLAT-02)', () => {
+describe('TabBar in tabs slot (SLAT-02)', () => {
   let container: HTMLElement;
   let widget: SuperWidget;
 
@@ -150,43 +159,35 @@ describe('Config gear (SLAT-02)', () => {
     container.remove();
   });
 
-  it('SLAT-02: tabs slot contains element with data-tab-role="config"', () => {
+  it('SLAT-02: tabs slot contains .sw-tab-strip (TabBar rendered)', () => {
+    const strip = widget.tabsEl.querySelector('.sw-tab-strip');
+    expect(strip).not.toBeNull();
+  });
+
+  it('SLAT-02: tabs slot contains .sw-tab-strip__add button', () => {
+    const addBtn = widget.tabsEl.querySelector('.sw-tab-strip__add');
+    expect(addBtn).not.toBeNull();
+  });
+
+  it('SLAT-02: tabs slot does NOT contain config gear (data-tab-role="config" removed)', () => {
     const config = widget.tabsEl.querySelector('[data-tab-role="config"]');
-    expect(config).not.toBeNull();
+    expect(config).toBeNull();
   });
 
-  it('SLAT-02: config gear is the last child of tabs slot', () => {
-    const lastChild = widget.tabsEl.lastElementChild;
-    expect(lastChild?.getAttribute('data-tab-role')).toBe('config');
-  });
-
-  it('SLAT-02: config gear has aria-label="Configure"', () => {
-    const config = widget.tabsEl.querySelector('[data-tab-role="config"]');
-    expect(config?.getAttribute('aria-label')).toBe('Configure');
-  });
-
-  it('SLAT-02: config gear textContent contains gear unicode U+2699', () => {
-    const config = widget.tabsEl.querySelector('[data-tab-role="config"]');
-    expect(config?.textContent).toContain('\u2699');
-  });
-
-  it('SLAT-02: tab buttons appear before config gear in DOM order', () => {
-    const children = Array.from(widget.tabsEl.children);
-    const configIndex = children.findIndex(
-      (el) => el.getAttribute('data-tab-role') === 'config'
-    );
-    const tabIndices = children
-      .map((el, i) => (el.getAttribute('data-tab-role') === 'tab' ? i : -1))
-      .filter((i) => i >= 0);
-    expect(tabIndices.length).toBeGreaterThan(0);
-    tabIndices.forEach((tabIndex) => {
-      expect(tabIndex).toBeLessThan(configIndex);
-    });
+  it('SLAT-02: tabs slot contains a tab button (data-tab-role="tab")', () => {
+    const tabBtn = widget.tabsEl.querySelector('[data-tab-role="tab"]');
+    expect(tabBtn).not.toBeNull();
   });
 
   it('SLAT-02: first tab has data-tab-active="true"', () => {
     const firstTab = widget.tabsEl.querySelector('[data-tab-role="tab"]');
     expect(firstTab?.getAttribute('data-tab-active')).toBe('true');
+  });
+
+  it('SLAT-02: .sw-tab-strip has role=tablist and aria-label="Workspace tabs"', () => {
+    const strip = widget.tabsEl.querySelector('.sw-tab-strip');
+    expect(strip?.getAttribute('role')).toBe('tablist');
+    expect(strip?.getAttribute('aria-label')).toBe('Workspace tabs');
   });
 });
 
@@ -226,25 +227,32 @@ describe('Status slot (SLAT-03)', () => {
 });
 
 // ---------------------------------------------------------------------------
-// SLAT-04: Tab overflow mask-image and scrollbar-width: none
+// SLAT-04: Tab overflow — chevron strip with scrollbar-width: none (Plan 174-02 D-09, D-10)
 // ---------------------------------------------------------------------------
 
-describe('Tab overflow mask (SLAT-04)', () => {
-  it('SLAT-04: superwidget.css contains mask-image on tabs slot', () => {
-    expect(css).toContain('mask-image');
+describe('Tab overflow chevrons (SLAT-04)', () => {
+  it('SLAT-04: superwidget.css contains .sw-tab-strip (inner scrollable strip)', () => {
+    expect(css).toContain('.sw-tab-strip');
   });
 
-  it('SLAT-04: mask-image uses linear-gradient for edge fade effect', () => {
-    expect(css).toContain('linear-gradient');
+  it('SLAT-04: superwidget.css contains .sw-tab-strip__chevron (overflow buttons)', () => {
+    expect(css).toContain('.sw-tab-strip__chevron');
   });
 
-  it('SLAT-04: superwidget.css contains scrollbar-width: none on tabs slot', () => {
+  it('SLAT-04: superwidget.css contains scrollbar-width: none on .sw-tab-strip', () => {
     expect(css).toContain('scrollbar-width: none');
   });
 
   it('SLAT-04: -webkit-scrollbar display: none is present for cross-browser support', () => {
     expect(css).toContain('::-webkit-scrollbar');
     expect(css).toContain('display: none');
+  });
+
+  it('SLAT-04: tabs slot does NOT use mask-image edge fade (replaced by chevrons)', () => {
+    // Find the [data-slot="tabs"] rule block and verify it has no mask-image
+    const tabsRuleMatch = css.match(/\[data-slot="tabs"\][^{]*\{[^}]*\}/s);
+    expect(tabsRuleMatch).not.toBeNull();
+    expect(tabsRuleMatch![0]).not.toContain('mask-image');
   });
 });
 
