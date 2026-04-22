@@ -114,18 +114,18 @@ describe('SuperWidget slots (SLAT-01)', () => {
     expect(widget.rootEl.dataset['component']).toBe('superwidget');
   });
 
-  it('SLAT-01: root contains exactly 5 direct children with data-slot attributes', () => {
+  it('SLAT-01: root contains exactly 6 direct children with data-slot attributes', () => {
     const slottedChildren = Array.from(widget.rootEl.children).filter(
       (el) => el.hasAttribute('data-slot')
     );
-    expect(slottedChildren.length).toBe(5);
+    expect(slottedChildren.length).toBe(6);
   });
 
-  it('SLAT-01: data-slot values are sidebar, header, tabs, canvas, status in DOM order', () => {
+  it('SLAT-01: data-slot values are sidebar, header, tabs, canvas, status, sidecar in DOM order', () => {
     const slots = Array.from(widget.rootEl.children)
       .filter((el) => el.hasAttribute('data-slot'))
       .map((el) => el.getAttribute('data-slot'));
-    expect(slots).toEqual(['sidebar', 'header', 'tabs', 'canvas', 'status']);
+    expect(slots).toEqual(['sidebar', 'header', 'tabs', 'canvas', 'status', 'sidecar']);
   });
 
   it('SLAT-01: headerEl getter returns element with data-slot="header"', () => {
@@ -639,10 +639,10 @@ describe('SuperWidget CommandBar injection (SHEL-03)', () => {
 });
 
 // ---------------------------------------------------------------------------
-// SHEL-02: Explorer passthrough accessors
+// SHEL-02: Sidecar slot accessors (Phase 176 — replaces passthrough slots)
 // ---------------------------------------------------------------------------
 
-describe('SuperWidget explorer passthrough (SHEL-02)', () => {
+describe('SuperWidget sidecar slot (SHEL-02)', () => {
   let widget: SuperWidget;
 
   beforeEach(() => {
@@ -653,23 +653,38 @@ describe('SuperWidget explorer passthrough (SHEL-02)', () => {
     widget.destroy();
   });
 
-  it('getTopSlotEl() returns an HTMLElement with class sw-explorer-slot-top', () => {
-    const el = widget.getTopSlotEl();
+  it('sidecarEl getter returns an aside element with data-slot="sidecar"', () => {
+    const el = widget.sidecarEl;
     expect(el).toBeInstanceOf(HTMLElement);
-    expect(el.classList.contains('sw-explorer-slot-top')).toBe(true);
+    expect(el.tagName.toLowerCase()).toBe('aside');
+    expect(el.dataset['slot']).toBe('sidecar');
   });
 
-  it('getBottomSlotEl() returns an HTMLElement with class sw-explorer-slot-bottom', () => {
-    const el = widget.getBottomSlotEl();
+  it('sidecarTopEl getter returns an HTMLElement with data-sidecar-slot="top-slot"', () => {
+    const el = widget.sidecarTopEl;
     expect(el).toBeInstanceOf(HTMLElement);
-    expect(el.classList.contains('sw-explorer-slot-bottom')).toBe(true);
+    expect(el.dataset['sidecarSlot']).toBe('top-slot');
   });
 
-  it('getTopSlotEl() returns the same element on repeated calls', () => {
-    expect(widget.getTopSlotEl()).toBe(widget.getTopSlotEl());
+  it('sidecarBottomEl getter returns an HTMLElement with data-sidecar-slot="bottom-slot"', () => {
+    const el = widget.sidecarBottomEl;
+    expect(el).toBeInstanceOf(HTMLElement);
+    expect(el.dataset['sidecarSlot']).toBe('bottom-slot');
   });
 
-  it('getBottomSlotEl() returns the same element on repeated calls', () => {
-    expect(widget.getBottomSlotEl()).toBe(widget.getBottomSlotEl());
+  it('sidecarTopEl and sidecarBottomEl return the same element on repeated calls', () => {
+    expect(widget.sidecarTopEl).toBe(widget.sidecarTopEl);
+    expect(widget.sidecarBottomEl).toBe(widget.sidecarBottomEl);
+  });
+
+  it('setSidecarVisible(true) sets data-sidecar-visible on root', () => {
+    widget.setSidecarVisible(true);
+    expect(widget.rootEl.dataset['sidecarVisible']).toBe('true');
+  });
+
+  it('setSidecarVisible(false) removes data-sidecar-visible from root', () => {
+    widget.setSidecarVisible(true);
+    widget.setSidecarVisible(false);
+    expect(widget.rootEl.dataset['sidecarVisible']).toBeUndefined();
   });
 });

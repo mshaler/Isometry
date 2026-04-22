@@ -105,20 +105,20 @@ describe('Shell replacement smoke test', () => {
     container.remove();
   });
 
-  it('getTopSlotEl() and getBottomSlotEl() return HTMLElements (SHEL-02)', () => {
+  it('sidecarTopEl and sidecarBottomEl return HTMLElements in sidecar sub-slots (SHEL-02)', () => {
     const container = document.createElement('div');
     document.body.appendChild(container);
 
     const sw = new SuperWidget(getCanvasFactory());
     sw.mount(container);
 
-    const top = sw.getTopSlotEl();
-    const bottom = sw.getBottomSlotEl();
+    const top = sw.sidecarTopEl;
+    const bottom = sw.sidecarBottomEl;
 
     expect(top).toBeInstanceOf(HTMLElement);
-    expect(top.classList.contains('sw-explorer-slot-top')).toBe(true);
+    expect(top.dataset['sidecarSlot']).toBe('top-slot');
     expect(bottom).toBeInstanceOf(HTMLElement);
-    expect(bottom.classList.contains('sw-explorer-slot-bottom')).toBe(true);
+    expect(bottom.dataset['sidecarSlot']).toBe('bottom-slot');
 
     sw.destroy();
     container.remove();
@@ -141,8 +141,8 @@ describe('Shell replacement smoke test', () => {
 
     // Step 2: wire all slot accessors (synchronous)
     const sidebar = sw.sidebarEl;
-    const top = sw.getTopSlotEl();
-    const bottom = sw.getBottomSlotEl();
+    const top = sw.sidecarTopEl;
+    const bottom = sw.sidecarBottomEl;
     const cb = sw.getCommandBar();
 
     // All fully wired — no async awaits needed

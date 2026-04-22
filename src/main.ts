@@ -643,46 +643,30 @@ async function main(): Promise<void> {
 	// Phase 123 DISC-03: Singleton DirectoryDiscoverySheet — one instance reused across openings
 	const discoverySheet = new DirectoryDiscoverySheet();
 
-	const topSlotEl = superWidget.getTopSlotEl();
-	superWidget.canvasEl.prepend(topSlotEl);
+	const sidecarTopEl = superWidget.sidecarTopEl;
+	const sidecarBottomEl = superWidget.sidecarBottomEl;
 
-	// Phase 152: Create child divs inside top slot — one per explorer (D-01)
+	// Phase 152: Create child divs inside sidecar top slot — one per explorer
 	const propertiesChildEl = document.createElement('div');
 	propertiesChildEl.className = 'slot-top__properties-explorer';
 	propertiesChildEl.style.display = 'none';
-	topSlotEl.appendChild(propertiesChildEl);
+	sidecarTopEl.appendChild(propertiesChildEl);
 
 	const projectionChildEl = document.createElement('div');
 	projectionChildEl.className = 'slot-top__projection-explorer';
 	projectionChildEl.style.display = 'none';
-	topSlotEl.appendChild(projectionChildEl);
+	sidecarTopEl.appendChild(projectionChildEl);
 
-	/** Show .sw-explorer-slot-top — SuperWidget always visible; also check properties/projection. */
-	function syncTopSlotVisibility(): void {
-		topSlotEl.style.display = 'block';
-	}
-
-	const bottomSlotEl = superWidget.getBottomSlotEl();
-	superWidget.canvasEl.appendChild(bottomSlotEl);
-
-	// Phase 153: Create child divs inside bottom slot — one per explorer (D-05)
+	// Phase 153: Create child divs inside sidecar bottom slot — one per explorer
 	const latchFiltersChildEl = document.createElement('div');
 	latchFiltersChildEl.className = 'slot-bottom__latch-filters';
 	latchFiltersChildEl.style.display = 'none';
-	bottomSlotEl.appendChild(latchFiltersChildEl);
+	sidecarBottomEl.appendChild(latchFiltersChildEl);
 
 	const formulasChildEl = document.createElement('div');
 	formulasChildEl.className = 'slot-bottom__formulas-explorer';
 	formulasChildEl.style.display = 'none';
-	bottomSlotEl.appendChild(formulasChildEl);
-
-	/** Show .workbench-slot-bottom when any child is visible; hide when all hidden. */
-	function syncBottomSlotVisibility(): void {
-		const anyVisible =
-			latchFiltersChildEl.style.display !== 'none' ||
-			formulasChildEl.style.display !== 'none';
-		bottomSlotEl.style.display = anyVisible ? '' : 'none';
-	}
+	sidecarBottomEl.appendChild(formulasChildEl);
 
 	async function refreshDataExplorer(): Promise<void> {
 		if (!dataExplorer) return;
@@ -1603,8 +1587,7 @@ async function main(): Promise<void> {
 			filter,
 			viewFactory,
 			onSidecarChange: (explorerId) => {
-				// TODO Phase 172+: wire sidecar visibility to ExplorerCanvas panel
-				console.debug('[ViewCanvas] sidecar:', explorerId);
+				superWidget.setSidecarVisible(explorerId !== null);
 			},
 			announcer,
 			getDimension: () => visualExplorer.getDimension(),
@@ -1732,8 +1715,7 @@ async function main(): Promise<void> {
 		],
 		groups: [],
 		syncSlots: () => {
-			syncTopSlotVisibility();
-			syncBottomSlotVisibility();
+			// Sidecar column visibility is managed by setSidecarVisible() via onSidecarChange
 		},
 	});
 
