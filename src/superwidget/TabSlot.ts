@@ -92,7 +92,8 @@ export function reorderTabs(tabs: readonly TabSlot[], fromIndex: number, toIndex
   if (toIndex < 0 || toIndex >= tabs.length) return tabs;
 
   const result = [...tabs];
-  const [moved] = result.splice(fromIndex, 1);
+  // splice returns an array; index already bounds-checked above so moved is always defined
+  const moved = result.splice(fromIndex, 1)[0] as TabSlot;
   result.splice(toIndex, 0, moved);
   return result;
 }
