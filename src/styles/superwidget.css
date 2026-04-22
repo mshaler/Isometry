@@ -29,12 +29,17 @@
   --sw-insertion-line-color: var(--accent);
 
   /* -------------------------------------------------------------------------
-   * Root layout — CSS Grid 4-row, flex participant (SLAT-07)
+   * Root layout — CSS Grid 5-slot (sidebar + 4 rows), flex participant (SLAT-07)
    * flex: 1 1 auto + min-height: 0 prevents height collapse in flex chain
    * ---------------------------------------------------------------------- */
   display: grid;
+  grid-template-columns: auto 1fr;
   grid-template-rows: auto auto 1fr auto;
-  grid-template-columns: 1fr;
+  grid-template-areas:
+    "sidebar header"
+    "sidebar tabs"
+    "sidebar canvas"
+    "sidebar status";
   flex: 1 1 auto;
   min-height: 0;
   background: var(--bg-primary);
@@ -42,10 +47,35 @@
 }
 
 /* ---------------------------------------------------------------------------
+ * Sidebar slot — spans all 4 rows via grid-area (SHEL-01)
+ * -------------------------------------------------------------------------- */
+
+[data-component="superwidget"] [data-slot="sidebar"] {
+  grid-area: sidebar;
+  width: 48px;
+  flex-shrink: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: var(--bg-surface);
+  position: relative;
+  z-index: 2;
+  border-right: 1px solid var(--border-subtle);
+}
+
+[data-component="superwidget"] [data-slot="sidebar"].sw-sidebar--icon-only {
+  width: 48px;
+}
+
+[data-component="superwidget"] [data-slot="sidebar"].sw-sidebar--icon-thumbnail {
+  width: 280px;
+}
+
+/* ---------------------------------------------------------------------------
  * Header slot
  * -------------------------------------------------------------------------- */
 
 [data-component="superwidget"] [data-slot="header"] {
+  grid-area: header;
   background: var(--sw-header-bg);
   padding: var(--sw-header-padding-y) var(--sw-header-padding-x);
   border-bottom: 1px solid var(--sw-slot-border);
@@ -60,6 +90,7 @@
  * -------------------------------------------------------------------------- */
 
 [data-component="superwidget"] [data-slot="tabs"] {
+  grid-area: tabs;
   display: flex;
   flex-direction: row;
   overflow: hidden;
@@ -172,6 +203,7 @@
  * -------------------------------------------------------------------------- */
 
 [data-component="superwidget"] [data-slot="canvas"] {
+  grid-area: canvas;
   background: var(--sw-canvas-bg);
   min-height: 0;
   overflow: hidden;
@@ -183,6 +215,7 @@
  * -------------------------------------------------------------------------- */
 
 [data-component="superwidget"] [data-slot="status"] {
+  grid-area: status;
   background: var(--sw-status-bg);
   min-height: 0;
   overflow: hidden;
@@ -320,4 +353,30 @@
 
 [data-component="superwidget"] .explorer-canvas [data-tab-container].active {
   display: flex;
+}
+
+/* ---------------------------------------------------------------------------
+ * Temporary explorer passthrough slots (D-02) — Phase 176 replaces with sidecar
+ * -------------------------------------------------------------------------- */
+
+.sw-explorer-slot-top {
+  box-sizing: border-box;
+  width: 100%;
+  flex-shrink: 0;
+  max-height: 50vh;
+  overflow: hidden auto;
+  background: var(--bg-primary);
+  border-bottom: 1px solid var(--border-subtle);
+  padding: var(--space-md);
+}
+
+.sw-explorer-slot-bottom {
+  box-sizing: border-box;
+  width: 100%;
+  flex-shrink: 0;
+  max-height: 30vh;
+  overflow: hidden auto;
+  background: var(--bg-primary);
+  border-top: 1px solid var(--border-subtle);
+  padding: var(--space-md);
 }
