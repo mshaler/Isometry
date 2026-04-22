@@ -34,6 +34,16 @@ export interface Projection {
 export type ValidationResult = { valid: true } | { valid: false; reason: string };
 
 // ---------------------------------------------------------------------------
+// TabMetadata (TABS-10, Phase 174)
+// Shell-level tab metadata that a canvas component can push to the shell.
+// ---------------------------------------------------------------------------
+
+export interface TabMetadata {
+  label?: string;
+  badge?: string;
+}
+
+// ---------------------------------------------------------------------------
 // CanvasComponent interface (D-02, Phase 164)
 // Plug-in contract that canvas implementations must satisfy.
 // SuperWidget calls mount/destroy via this interface; never imports concrete classes.
@@ -43,6 +53,8 @@ export interface CanvasComponent {
   mount(container: HTMLElement): void;
   destroy(): void;
   onProjectionChange?(proj: Projection): void;
+  /** TABS-10: injected by SuperWidget after mount. Canvas calls this to update shell tab metadata. */
+  onTabMetadataChange?: ((meta: TabMetadata) => void) | undefined;
 }
 
 // ---------------------------------------------------------------------------
