@@ -258,15 +258,18 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 
 ### Active
 
-## Current Milestone: v13.3 SuperWidget Shell
+## Current Milestone: v14.0 Horizontal Ribbon Navigation
 
-**Goal:** Replace WorkbenchShell with SuperWidget as the primary app container — tab management, explorer sidecar polish, rich status slots, and full session persistence.
+**Goal:** Replace vertical DockNav sidebar with horizontal ribbon system — one navigation ribbon (existing dock items) plus two stub ribbon rows (Stories, Datasets) — and fix all broken dock wiring.
 
 **Target features:**
-- SuperWidget replaces WorkbenchShell as top-level layout — tab bar with canvas slots and status bar become the real UI, old flex-column shell retired
-- Tab management UX — create/close/reorder tabs, tab persistence across sessions via StateManager
-- Explorer sidecar polish — auto-show/hide transitions for bound views, multiple explorer support, smooth lifecycle
-- Rich status slot content — contextual status per canvas type (card count, filter summary, selection info, editor state)
+- Fix dock wiring so all items (Data Explorer, Filters, Formulas, etc.) respond to clicks correctly
+- Reorient DockNav from vertical left sidebar to horizontal ribbon bar below the tab strip
+- Verb-noun sections (Integrate/Visualize/Analyze/Activate/Help) flow as horizontal icon+label groups with dividers
+- Add Stories stub ribbon row with placeholder Lucide icons and "coming soon" state
+- Add Datasets stub ribbon row with placeholder Lucide icons and "coming soon" state
+- SuperWidget CSS grid updated: remove sidebar column, add ribbon rows between tabs and canvas
+- Reclaim full viewport width for canvas area
 
 ### Out of Scope
 
