@@ -9,16 +9,16 @@ Requirements for v13.3. Each maps to roadmap phases.
 
 ### Tab Management
 
-- [ ] **TABS-01**: User can create a new tab via + button in the tab bar
-- [ ] **TABS-02**: User can close a tab via × button (last tab cannot be closed)
-- [ ] **TABS-03**: User can switch between tabs by clicking tab headers
-- [ ] **TABS-04**: Active tab has a visible indicator distinguishing it from inactive tabs
+- [x] **TABS-01**: User can create a new tab via + button in the tab bar
+- [x] **TABS-02**: User can close a tab via × button (last tab cannot be closed)
+- [x] **TABS-03**: User can switch between tabs by clicking tab headers
+- [x] **TABS-04**: Active tab has a visible indicator distinguishing it from inactive tabs
 - [ ] **TABS-05**: User can reorder tabs via pointer drag-and-drop
-- [ ] **TABS-06**: Tab bar shows overflow chevrons when tabs exceed available width
+- [x] **TABS-06**: Tab bar shows overflow chevrons when tabs exceed available width
 - [ ] **TABS-07**: User can navigate tabs via keyboard (roving tabindex, arrow keys)
 - [ ] **TABS-08**: User can close active tab via Cmd+W shortcut
-- [ ] **TABS-09**: TabSlot type wraps Projection without conflating shell-level tabs with canvas-internal tabs
-- [ ] **TABS-10**: Tab metadata (canvas type label, badge) flows upward via onTabMetadataChange callback (CANV-06 preserved)
+- [x] **TABS-09**: TabSlot type wraps Projection without conflating shell-level tabs with canvas-internal tabs
+- [x] **TABS-10**: Tab metadata (canvas type label, badge) flows upward via onTabMetadataChange callback (CANV-06 preserved)
 
 ### Shell Replacement
 
@@ -84,16 +84,16 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| TABS-01 | Phase 174 | Pending |
-| TABS-02 | Phase 174 | Pending |
-| TABS-03 | Phase 174 | Pending |
-| TABS-04 | Phase 174 | Pending |
+| TABS-01 | Phase 174 | Complete |
+| TABS-02 | Phase 174 | Complete |
+| TABS-03 | Phase 174 | Complete |
+| TABS-04 | Phase 174 | Complete |
 | TABS-05 | Phase 174 | Pending |
-| TABS-06 | Phase 174 | Pending |
+| TABS-06 | Phase 174 | Complete |
 | TABS-07 | Phase 174 | Pending |
 | TABS-08 | Phase 174 | Pending |
-| TABS-09 | Phase 174 | Pending |
-| TABS-10 | Phase 174 | Pending |
+| TABS-09 | Phase 174 | Complete |
+| TABS-10 | Phase 174 | Complete |
 | SHEL-01 | Phase 175 | Pending |
 | SHEL-02 | Phase 175 | Pending |
 | SHEL-03 | Phase 175 | Pending |
