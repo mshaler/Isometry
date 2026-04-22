@@ -1569,7 +1569,7 @@ async function main(): Promise<void> {
 						});
 					}
 				},
-			}, (proj: Projection) => superWidget.commitProjection(proj));
+			}, (proj: Projection) => superWidget.commitProjection(proj), bridge);
 			return explorerCanvas;
 		},
 	});
@@ -1585,6 +1585,7 @@ async function main(): Promise<void> {
 			pafv,
 			filter,
 			viewFactory,
+			selection,
 			onSidecarChange: (explorerId) => {
 				superWidget.setSidecarVisible(explorerId !== null);
 			},

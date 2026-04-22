@@ -72,7 +72,7 @@ function makeConfig(overrides: Partial<ViewCanvasConfig> = {}): ViewCanvasConfig
     queryBuilder: {} as ViewCanvasConfig['queryBuilder'],
     bridge: {} as ViewCanvasConfig['bridge'],
     pafv: {} as ViewCanvasConfig['pafv'],
-    filter: {} as ViewCanvasConfig['filter'],
+    filter: { resetToDefaults: vi.fn(), subscribe: () => () => {}, getFilters: () => [] } as ViewCanvasConfig['filter'],
     viewFactory: makeViewFactory(),
     onSidecarChange: vi.fn(),
     ...overrides,

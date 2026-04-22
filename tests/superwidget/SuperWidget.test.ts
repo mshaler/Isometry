@@ -222,8 +222,10 @@ describe('Status slot (SLAT-03)', () => {
     expect(status).not.toBeNull();
   });
 
-  it('SLAT-03: status slot has no children when empty (height governed by CSS min-height: 0)', () => {
-    expect(widget.statusEl.children.length).toBe(0);
+  it('SLAT-03: status slot has sync indicator on construction (STAT-06)', () => {
+    // Phase 176: sync indicator is always rendered in the status slot
+    expect(widget.statusEl.querySelector('.sw-sync-indicator')).not.toBeNull();
+    expect(widget.statusEl.children.length).toBe(1);
   });
 
   it('SLAT-03: CSS defines min-height: 0 on status slot (zero-height when empty)', () => {

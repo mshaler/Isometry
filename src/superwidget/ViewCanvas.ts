@@ -1,6 +1,7 @@
 // Isometry v13.2 — Phase 171 ViewCanvas
 // Production CanvasComponent wrapping ViewManager with status slot and sidecar signaling.
 // Requirements: VCNV-01, VCNV-02, VCNV-03, VCNV-04, VCNV-05
+// Phase 176: Extended with filter-count and selection-count status spans (STAT-01, STAT-05, STAT-07)
 
 import type { Announcer } from '../accessibility/Announcer';
 import type { QueryBuilder } from '../providers/QueryBuilder';
@@ -40,17 +41,25 @@ const VIEW_SIDECAR_MAP: Partial<Record<ViewType, string>> = {
 // ViewCanvasConfig
 // ---------------------------------------------------------------------------
 
+/** Extended filter interface for ViewCanvas — includes subscribe and getFilters for status bar (STAT-05) */
+export interface ViewCanvasFilterLike extends FilterProviderLike {
+  subscribe(fn: () => void): () => void;
+  getFilters(): readonly unknown[];
+}
+
 export interface ViewCanvasConfig {
   canvasId: string;
   coordinator: StateCoordinator;
   queryBuilder: QueryBuilder;
   bridge: WorkerBridgeLike;
   pafv: PAFVProviderLike;
-  filter: FilterProviderLike;
+  filter: ViewCanvasFilterLike;
   viewFactory: Record<ViewType, () => IView>;
   onSidecarChange: (explorerId: string | null) => void;
   announcer?: Announcer;
   getDimension?: () => '1x' | '2x' | '5x';
+  /** Optional selection provider for selection-count status span (STAT-07) */
+  selection?: { getSelectedIds(): string[]; subscribe(fn: () => void): () => void };
 }
 
 // ---------------------------------------------------------------------------
@@ -72,6 +81,8 @@ export class ViewCanvas implements CanvasComponent {
   private _wrapperEl: HTMLElement | null = null;
   private _statusEl: HTMLElement | null = null;
   private _currentViewType: ViewType | null = null;
+  private _filterUnsub: (() => void) | null = null;
+  private _selectionUnsub: (() => void) | null = null;
 
   constructor(config: ViewCanvasConfig) {
     this._config = config;
@@ -89,8 +100,8 @@ export class ViewCanvas implements CanvasComponent {
       bridge: this._config.bridge,
       pafv: this._config.pafv,
       filter: this._config.filter,
-      announcer: this._config.announcer,
-      getDimension: this._config.getDimension,
+      ...(this._config.announcer !== undefined && { announcer: this._config.announcer }),
+      ...(this._config.getDimension !== undefined && { getDimension: this._config.getDimension }),
     };
 
     this._viewManager = new ViewManager(vmConfig);
@@ -99,6 +110,18 @@ export class ViewCanvas implements CanvasComponent {
       this._updateStatus(viewType);
       this._notifySidecar(viewType);
     };
+
+    // Subscribe to filter changes for reactive status updates (STAT-05)
+    this._filterUnsub = this._config.filter.subscribe(() => {
+      if (this._currentViewType) this._updateStatus(this._currentViewType);
+    });
+
+    // Subscribe to selection changes if provided (STAT-07)
+    if (this._config.selection) {
+      this._selectionUnsub = this._config.selection.subscribe(() => {
+        if (this._currentViewType) this._updateStatus(this._currentViewType);
+      });
+    }
 
     container.appendChild(wrapper);
 
@@ -133,6 +156,8 @@ export class ViewCanvas implements CanvasComponent {
   }
 
   destroy(): void {
+    if (this._filterUnsub) { this._filterUnsub(); this._filterUnsub = null; }
+    if (this._selectionUnsub) { this._selectionUnsub(); this._selectionUnsub = null; }
     if (this._viewManager) {
       this._viewManager.destroy();
       this._viewManager = null;
@@ -169,9 +194,31 @@ export class ViewCanvas implements CanvasComponent {
       countSpan.className = 'sw-status-bar__item';
       countSpan.dataset['stat'] = 'card-count';
 
+      const filterSep = document.createElement('span');
+      filterSep.className = 'sw-status-bar__sep';
+      filterSep.dataset['stat'] = 'filter-sep';
+      filterSep.textContent = '\u00B7';
+
+      const filterSpan = document.createElement('span');
+      filterSpan.className = 'sw-status-bar__item';
+      filterSpan.dataset['stat'] = 'filter-count';
+
+      const selSep = document.createElement('span');
+      selSep.className = 'sw-status-bar__sep';
+      selSep.dataset['stat'] = 'selection-sep';
+      selSep.textContent = '\u00B7';
+
+      const selSpan = document.createElement('span');
+      selSpan.className = 'sw-status-bar__item';
+      selSpan.dataset['stat'] = 'selection-count';
+
       bar.appendChild(nameSpan);
       bar.appendChild(sep);
       bar.appendChild(countSpan);
+      bar.appendChild(filterSep);
+      bar.appendChild(filterSpan);
+      bar.appendChild(selSep);
+      bar.appendChild(selSpan);
       this._statusEl.appendChild(bar);
     }
 
@@ -183,6 +230,38 @@ export class ViewCanvas implements CanvasComponent {
     if (countSpan && this._viewManager) {
       const count = this._viewManager.getLastCards().length;
       countSpan.textContent = count === 1 ? '1 card' : `${count.toLocaleString('en-US')} cards`;
+    }
+
+    // Filter count — hide separator when no active filters (STAT-05)
+    const filterSpan = this._statusEl.querySelector<HTMLElement>('[data-stat="filter-count"]');
+    const filterSep = this._statusEl.querySelector<HTMLElement>('[data-stat="filter-sep"]');
+    if (filterSpan && filterSep) {
+      const filterCount = this._config.filter.getFilters().length;
+      if (filterCount > 0) {
+        filterSpan.textContent = filterCount === 1 ? '1 filter active' : `${filterCount} filters active`;
+        filterSpan.style.display = '';
+        filterSep.style.display = '';
+      } else {
+        filterSpan.textContent = '';
+        filterSpan.style.display = 'none';
+        filterSep.style.display = 'none';
+      }
+    }
+
+    // Selection count — hide separator when nothing selected (STAT-07)
+    const selSpan = this._statusEl.querySelector<HTMLElement>('[data-stat="selection-count"]');
+    const selSep = this._statusEl.querySelector<HTMLElement>('[data-stat="selection-sep"]');
+    if (selSpan && selSep && this._config.selection) {
+      const selCount = this._config.selection.getSelectedIds().length;
+      if (selCount > 0) {
+        selSpan.textContent = selCount === 1 ? '1 selected' : `${selCount} selected`;
+        selSpan.style.display = '';
+        selSep.style.display = '';
+      } else {
+        selSpan.textContent = '';
+        selSpan.style.display = 'none';
+        selSep.style.display = 'none';
+      }
     }
   }
 
