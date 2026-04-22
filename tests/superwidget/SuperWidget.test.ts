@@ -114,18 +114,18 @@ describe('SuperWidget slots (SLAT-01)', () => {
     expect(widget.rootEl.dataset['component']).toBe('superwidget');
   });
 
-  it('SLAT-01: root contains exactly 4 direct children with data-slot attributes', () => {
+  it('SLAT-01: root contains exactly 5 direct children with data-slot attributes', () => {
     const slottedChildren = Array.from(widget.rootEl.children).filter(
       (el) => el.hasAttribute('data-slot')
     );
-    expect(slottedChildren.length).toBe(4);
+    expect(slottedChildren.length).toBe(5);
   });
 
-  it('SLAT-01: data-slot values are header, tabs, canvas, status in DOM order', () => {
+  it('SLAT-01: data-slot values are sidebar, header, tabs, canvas, status in DOM order', () => {
     const slots = Array.from(widget.rootEl.children)
       .filter((el) => el.hasAttribute('data-slot'))
       .map((el) => el.getAttribute('data-slot'));
-    expect(slots).toEqual(['header', 'tabs', 'canvas', 'status']);
+    expect(slots).toEqual(['sidebar', 'header', 'tabs', 'canvas', 'status']);
   });
 
   it('SLAT-01: headerEl getter returns element with data-slot="header"', () => {

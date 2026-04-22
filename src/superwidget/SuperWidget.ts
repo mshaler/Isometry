@@ -5,6 +5,7 @@ import { TabBar } from './TabBar';
 import { makeTabSlot, removeTab, reorderTabs } from './TabSlot';
 import type { TabSlot } from './TabSlot';
 import type { ShortcutRegistry } from '../shortcuts/ShortcutRegistry';
+import type { CommandBar } from '../ui/CommandBar';
 
 export type CanvasFactory = (canvasId: string, binding: CanvasBinding) => CanvasComponent | undefined;
 
@@ -26,6 +27,7 @@ const ZONE_LABELS: Record<ZoneRole, string> = {
  */
 export class SuperWidget {
   private _root: HTMLElement;
+  private _sidebarEl: HTMLElement;
   private _headerEl: HTMLElement;
   private _canvasEl: HTMLElement;
   private _statusEl: HTMLElement;
@@ -38,18 +40,31 @@ export class SuperWidget {
   private _tabs: TabSlot[] = [];
   private _activeTabSlotId: string = '';
   private _shortcuts: ShortcutRegistry | undefined;
+  private _commandBar: CommandBar | undefined;
+  private _topPassthroughEl: HTMLElement;
+  private _bottomPassthroughEl: HTMLElement;
 
-  constructor(canvasFactory: CanvasFactory, shortcuts?: ShortcutRegistry) {
+  constructor(canvasFactory: CanvasFactory, shortcuts?: ShortcutRegistry, commandBar?: CommandBar) {
     this._canvasFactory = canvasFactory;
     this._shortcuts = shortcuts;
+    this._commandBar = commandBar;
+
     // Root element
     this._root = document.createElement('div');
     this._root.dataset['component'] = 'superwidget';
 
+    // Sidebar slot (5th grid slot — spans all rows)
+    this._sidebarEl = document.createElement('div');
+    this._sidebarEl.dataset['slot'] = 'sidebar';
+
     // Header slot
     this._headerEl = document.createElement('div');
     this._headerEl.dataset['slot'] = 'header';
-    this._headerEl.textContent = 'Zone';
+    if (commandBar) {
+      commandBar.mount(this._headerEl);
+    } else {
+      this._headerEl.textContent = 'Zone';
+    }
 
     // Tabs slot
     this._tabsEl = document.createElement('div');
@@ -87,13 +102,21 @@ export class SuperWidget {
     this._statusEl = document.createElement('div');
     this._statusEl.dataset['slot'] = 'status';
 
-    // Append slots to root in grid order: header, tabs, canvas, status (D-07)
+    // Explorer passthrough slots (D-02) — caller places these as needed
+    this._topPassthroughEl = document.createElement('div');
+    this._topPassthroughEl.className = 'sw-explorer-slot-top';
+    this._bottomPassthroughEl = document.createElement('div');
+    this._bottomPassthroughEl.className = 'sw-explorer-slot-bottom';
+
+    // Append slots to root: sidebar first (accessibility), then header/tabs/canvas/status
+    this._root.appendChild(this._sidebarEl);
     this._root.appendChild(this._headerEl);
     this._root.appendChild(this._tabsEl);
     this._root.appendChild(this._canvasEl);
     this._root.appendChild(this._statusEl);
 
-    // Initialize render-count tracking on all four slots (D-05)
+    // Initialize render-count tracking on all five slots (D-05)
+    this._sidebarEl.dataset['renderCount'] = '0';
     this._headerEl.dataset['renderCount'] = '0';
     this._canvasEl.dataset['renderCount'] = '0';
     this._statusEl.dataset['renderCount'] = '0';
@@ -120,6 +143,7 @@ export class SuperWidget {
     }
     this._currentProjection = null;
     this._shortcuts?.unregister('Cmd+W');
+    this._commandBar?.destroy();
     this._tabBar.destroy();
     this._root.remove();
     this._mounted = false;
@@ -203,8 +227,8 @@ export class SuperWidget {
 
     const prev = this._currentProjection;
 
-    // Step 3: Zone label update (RNDR-05)
-    if (!prev || prev.zoneRole !== proj.zoneRole) {
+    // Step 3: Zone label update (RNDR-05) — skipped when CommandBar owns the header
+    if (!this._commandBar && (!prev || prev.zoneRole !== proj.zoneRole)) {
       this._headerEl.textContent = ZONE_LABELS[proj.zoneRole];
       this._headerEl.dataset['renderCount'] = String(
         Number(this._headerEl.dataset['renderCount']) + 1
@@ -255,6 +279,14 @@ export class SuperWidget {
   get tabsEl(): HTMLElement { return this._tabsEl; }
   get rootEl(): HTMLElement { return this._root; }
   get mounted(): boolean { return this._mounted; }
+  get sidebarEl(): HTMLElement { return this._sidebarEl; }
+
+  // CommandBar accessor (D-03, D-06)
+  getCommandBar(): CommandBar | undefined { return this._commandBar; }
+
+  // Temporary explorer passthrough accessors (D-02) — Phase 176 replaces with real sidecar
+  getTopSlotEl(): HTMLElement { return this._topPassthroughEl; }
+  getBottomSlotEl(): HTMLElement { return this._bottomPassthroughEl; }
 
   // Tab state getters (for Plan 03 and Phase 177)
   get tabs(): readonly TabSlot[] { return this._tabs; }
