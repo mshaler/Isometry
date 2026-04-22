@@ -196,10 +196,15 @@
 
   /* Indicator / affordance sizes */
   --size-spinner: 32px;            /* CSS-only loading spinner diameter */
+  --size-spinner-sm: 14px;         /* Small inline spinner (directory discovery, etc.) */
   --size-sync-dot: 6px;            /* Sync indicator dot */
   --size-fill-handle: 6px;         /* SuperGrid active-cell fill handle */
   --size-resize-handle: 6px;       /* Row-header drag-resize handle */
   --size-swatch: 12px;             /* Color swatch in legend rows */
+  --size-icon-md: 20px;            /* Icon container inside dock/toolbar items */
+  --size-slider-thumb: 14px;       /* Zoom / range slider thumb diameter */
+  --size-thumbnail-w: 96px;        /* Minimap / preview thumbnail width */
+  --size-thumbnail-h: 48px;        /* Minimap / preview thumbnail height */
 
   /* Content area minimums */
   --size-notebook-body: 180px;     /* Notebook textarea / body min-height */

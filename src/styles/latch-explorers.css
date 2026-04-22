@@ -58,7 +58,7 @@
 	display: inline-flex;
 	gap: var(--space-xs);
 	align-items: center;
-	padding: 2px var(--space-sm);
+	padding: 2px var(--space-sm); /* structural: 2px vertical sub-token for compact chip */
 	font-size: var(--text-xs);
 	color: var(--text-primary);
 	cursor: pointer;
@@ -66,9 +66,9 @@
 	border: 1px solid var(--border-subtle);
 	border-radius: var(--radius-md);
 	transition:
-		background-color 0.15s ease,
-		border-color 0.15s ease,
-		color 0.15s ease;
+		background-color var(--transition-fast) ease,
+		border-color var(--transition-fast) ease,
+		color var(--transition-fast) ease;
 	user-select: none;
 }
 
@@ -182,7 +182,7 @@
 .latch-explorers__histogram-bar {
 	fill: var(--accent);
 	opacity: 0.7;
-	transition: opacity 0.15s ease;
+	transition: opacity var(--transition-fast) ease;
 }
 
 .latch-explorers__histogram-bar:hover {
@@ -206,7 +206,7 @@
 
 /* X-axis labels */
 .latch-explorers__histogram .x-axis text {
-	font-size: 9px;
+	font-size: 9px; /* structural: histogram axis labels — below token scale (--text-xs = 10px) */
 	fill: var(--text-muted);
 }
 
@@ -240,7 +240,7 @@
 }
 
 .latch-explorers__scrubber-retry {
-	padding: 1px var(--space-sm);
+	padding: 1px var(--space-sm); /* structural: 1px vertical sub-token for minimal retry button */
 	font-size: var(--text-xs);
 	color: var(--danger);
 	cursor: pointer;

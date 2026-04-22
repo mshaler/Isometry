@@ -34,13 +34,13 @@
 /* Section header — uppercase, muted, matching Figma "INTEGRATE" / "VISUALIZE" style */
 .dock-nav__section-header {
   display: block;
-  font-size: 10px;
+  font-size: var(--text-xs);
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-muted);
   padding: var(--space-md) var(--space-md) var(--space-xs);
-  overflow: hidden;
+  overflow: hidden; /* intentional: section header hides when sidebar is icon-only */
   white-space: nowrap;
   text-overflow: clip;
   user-select: none;
@@ -59,7 +59,7 @@
   flex-direction: row;
   align-items: center;
   width: 100%;
-  height: 36px;
+  height: var(--size-toolbar-settings);
   padding: 0 var(--space-md);
   gap: var(--space-sm);
   background: transparent;
@@ -98,14 +98,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 20px;
-  height: 20px;
+  width: var(--size-icon-md);
+  height: var(--size-icon-md);
   flex-shrink: 0;
 }
 
 .dock-nav__item-icon svg {
-  width: 18px;
-  height: 18px;
+  width: 18px; /* structural: svg inset within 20px icon container */
+  height: 18px; /* structural: svg inset within 20px icon container */
 }
 
 /* Item label — visible by default in icon-only (expanded) state */
@@ -114,7 +114,7 @@
   font-weight: 400;
   line-height: 1.2;
   white-space: nowrap;
-  overflow: hidden;
+  overflow: hidden; /* intentional: text-overflow ellipsis requires overflow:hidden */
   text-overflow: ellipsis;
   flex: 1;
 }
@@ -127,8 +127,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 48px;
-  height: 40px;
+  width: var(--size-sidebar-icon);
+  height: var(--size-toolbar-settings);
   padding: 0;
   background: transparent;
   border: none;
@@ -162,8 +162,8 @@
 
 .dock-nav--icon-only .dock-nav__item {
   justify-content: center;
-  width: 48px;
-  height: 44px;
+  width: var(--size-sidebar-icon);
+  height: 44px; /* intentional: icon-only item is taller than toolbar-settings (44px touch target) */
   padding: 0;
   gap: 0;
   border-radius: 0;
@@ -195,20 +195,20 @@
 
 .dock-nav--icon-thumbnail .dock-nav__item-thumb {
   display: block;
-  width: 96px;
-  height: 48px;
+  width: var(--size-thumbnail-w);
+  height: var(--size-thumbnail-h);
   border: 1px solid var(--border-subtle);
   background: var(--bg-primary);
-  overflow: hidden;
-  border-radius: 2px;
+  overflow: hidden; /* intentional: clips minimap SVG to thumbnail bounds */
+  border-radius: 2px; /* structural: subtle rounding below token scale for thumbnail */
   flex-shrink: 0;
   margin-left: auto;
 }
 
 .dock-nav__item-thumb .minimap-svg {
   display: block;
-  width: 96px;
-  height: 48px;
+  width: var(--size-thumbnail-w);
+  height: var(--size-thumbnail-h);
 }
 
 /* Loupe overlay — pointer-events disabled on dimming rects */

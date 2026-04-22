@@ -14,7 +14,7 @@
   inset: 0;
   margin: auto;
   width: 90vw;
-  max-width: 480px;
+  max-width: 480px; /* intentional: 480px dialog max-width for comfortable reading without excessive whitespace */
   background: var(--bg-card);
   border: 1px solid var(--border-muted);
   border-radius: var(--radius-lg);
@@ -54,7 +54,7 @@
   list-style: none;
   margin: 0;
   padding: 0;
-  max-height: 320px;
+  max-height: var(--size-card-full-max);
   overflow-y: auto;
 }
 
@@ -63,7 +63,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-sm);
-  min-height: 36px;
+  min-height: var(--size-toolbar-settings);
   padding: var(--space-xs) var(--space-md);
   border-radius: var(--radius-sm);
   cursor: pointer;
@@ -76,8 +76,8 @@
 /* Checkbox */
 .disc-row input[type="checkbox"] {
   accent-color: var(--accent);
-  min-width: 20px;
-  min-height: 20px;
+  min-width: 20px; /* intentional: 20px checkbox overrides browser default for consistent touch target */
+  min-height: 20px; /* intentional: 20px checkbox overrides browser default for consistent touch target */
   cursor: pointer;
 }
 
@@ -95,7 +95,7 @@
   font-size: var(--text-sm);
   font-weight: 400;
   line-height: 1.4;
-  padding: 2px 6px;
+  padding: 2px 6px; /* structural: sub-token badge padding — narrower vertical than --space-xs */
   border-radius: var(--radius-sm);
 }
 
@@ -165,10 +165,10 @@
 
 /* Import progress bar */
 .disc-import-progress-bar {
-  height: 4px;
+  height: var(--space-xs);
   background: var(--border-subtle);
-  border-radius: 2px;
-  overflow: hidden;
+  border-radius: 2px; /* structural: subtle rounding on progress bar end-caps */
+  overflow: hidden; /* intentional: clips fill bar to progress bar bounds */
 }
 .disc-import-progress-bar__fill {
   height: 100%;
@@ -181,7 +181,7 @@
 .disc-import-list {
   display: flex;
   flex-direction: column;
-  max-height: 320px;
+  max-height: var(--size-card-full-max);
   overflow-y: auto;
 }
 
@@ -190,11 +190,11 @@
   display: flex;
   align-items: center;
   gap: var(--space-sm);
-  min-height: 36px;
+  min-height: var(--size-toolbar-settings);
   padding: var(--space-xs) var(--space-md);
 }
 .disc-import-row__status {
-  width: 20px;
+  width: 20px; /* intentional: status icon column width matches checkbox for visual alignment */
   text-align: center;
   flex-shrink: 0;
 }
@@ -229,11 +229,11 @@
   color: var(--danger);
 }
 
-/* CSS-only 14px spinner */
+/* CSS-only small spinner */
 .disc-import-spinner {
   display: inline-block;
-  width: 14px;
-  height: 14px;
+  width: var(--size-spinner-sm);
+  height: var(--size-spinner-sm);
   border: 2px solid var(--border-muted);
   border-top-color: var(--accent);
   border-radius: 50%;
@@ -249,8 +249,8 @@
   .disc-import-spinner {
     animation: none;
     border: none;
-    width: auto;
-    height: auto;
+    width: auto; /* intentional: reduced-motion spinner collapses to text ellipsis — no fixed dimensions */
+    height: auto; /* intentional: reduced-motion spinner collapses to text ellipsis — no fixed dimensions */
     display: inline;
   }
   .disc-import-spinner::after {
