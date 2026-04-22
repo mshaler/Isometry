@@ -67,7 +67,9 @@ All phases 1-178 are archived in `.planning/milestones/` under their respective 
   4. User clicks any Visualize section icon (SuperGrid, Timeline, Maps, Charts, Graphs) and the active view switches
   5. User clicks the Settings icon and the settings panel or command palette opens
   6. The currently active dock item is visually distinguished from inactive items (accent color, background, or indicator)
-**Plans**: TBD
+**Plans:** 1 plan
+Plans:
+- [ ] 179-01-PLAN.md — Wire help section handlers and mount-time dock state sync
 **UI hint**: yes
 
 ### Phase 180: Horizontal Ribbon Layout
@@ -100,6 +102,6 @@ All phases 1-178 are archived in `.planning/milestones/` under their respective 
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 179. Dock Wiring Repair | 0/? | Not started | - |
+| 179. Dock Wiring Repair | 0/1 | Not started | - |
 | 180. Horizontal Ribbon Layout | 0/? | Not started | - |
 | 181. Stub Ribbon Rows | 0/? | Not started | - |
