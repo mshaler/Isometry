@@ -288,6 +288,26 @@
   user-select: none;
 }
 
+/* ---------------------------------------------------------------------------
+ * Drag insertion line (TABS-05)
+ * -------------------------------------------------------------------------- */
+
+.sw-tab-insertion-line {
+  position: fixed;
+  width: 2px;
+  background: var(--sw-insertion-line-color, var(--accent));
+  border-radius: 1px;
+  z-index: 10000;
+  pointer-events: none;
+  display: none;
+  box-shadow: 0 0 4px var(--sw-insertion-line-color, var(--accent));
+}
+
+/* Dragging state — dim source tab */
+[data-component="superwidget"] [data-tab-role="tab"][data-tab-dragging="true"] {
+  opacity: var(--sw-tab-drag-opacity, 0.45);
+}
+
 /* Tab containers — CSS hide/show via .active class (D-03) */
 [data-component="superwidget"] .explorer-canvas [data-tab-container] {
   display: none;
