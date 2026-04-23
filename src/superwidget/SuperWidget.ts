@@ -1,4 +1,5 @@
 import '../styles/superwidget.css';
+import '../styles/stub-ribbon.css';
 import { validateProjection } from './projection';
 import type { CanvasBinding, CanvasComponent, Projection, TabMetadata, ZoneRole } from './projection';
 import { TabBar } from './TabBar';
@@ -6,6 +7,8 @@ import { makeTabSlot, removeTab, reorderTabs } from './TabSlot';
 import type { TabSlot } from './TabSlot';
 import type { ShortcutRegistry } from '../shortcuts/ShortcutRegistry';
 import type { CommandBar } from '../ui/CommandBar';
+import { STORIES_STUB_DEFS, DATASETS_STUB_DEFS } from '../ui/section-defs';
+import { iconSvg } from '../ui/icons';
 
 export type CanvasFactory = (canvasId: string, binding: CanvasBinding) => CanvasComponent | undefined;
 
@@ -28,6 +31,8 @@ const ZONE_LABELS: Record<ZoneRole, string> = {
 export class SuperWidget {
   private _root: HTMLElement;
   private _ribbonEl: HTMLElement;
+  private _storiesRibbonEl: HTMLElement;
+  private _datasetsRibbonEl: HTMLElement;
   private _headerEl: HTMLElement;
   private _canvasEl: HTMLElement;
   private _statusEl: HTMLElement;
@@ -57,6 +62,16 @@ export class SuperWidget {
     // Ribbon slot — horizontal navigation bar
     this._ribbonEl = document.createElement('div');
     this._ribbonEl.dataset['slot'] = 'ribbon';
+
+    // Stories stub ribbon slot (Phase 181 — STOR-01, STOR-02, STOR-03)
+    this._storiesRibbonEl = document.createElement('div');
+    this._storiesRibbonEl.dataset['slot'] = 'stories-ribbon';
+    this._renderStubRibbon(this._storiesRibbonEl, 'STORIES', STORIES_STUB_DEFS);
+
+    // Datasets stub ribbon slot (Phase 181 — DSET-01, DSET-02, DSET-03)
+    this._datasetsRibbonEl = document.createElement('div');
+    this._datasetsRibbonEl.dataset['slot'] = 'datasets-ribbon';
+    this._renderStubRibbon(this._datasetsRibbonEl, 'DATASETS', DATASETS_STUB_DEFS);
 
     // Header slot
     this._headerEl = document.createElement('div');
@@ -116,8 +131,10 @@ export class SuperWidget {
     this._sidecarEl.appendChild(this._sidecarTopEl);
     this._sidecarEl.appendChild(this._sidecarBottomEl);
 
-    // Append slots to root: ribbon first (accessibility), then header/tabs/canvas/status/sidecar
+    // Append slots to root: ribbon first (accessibility), then stub rows, header/tabs/canvas/status/sidecar
     this._root.appendChild(this._ribbonEl);
+    this._root.appendChild(this._storiesRibbonEl);
+    this._root.appendChild(this._datasetsRibbonEl);
     this._root.appendChild(this._headerEl);
     this._root.appendChild(this._tabsEl);
     this._root.appendChild(this._canvasEl);
@@ -310,6 +327,58 @@ export class SuperWidget {
   }
 
   /**
+   * Render a disabled stub ribbon row from item definitions.
+   * Purely presentational — no event handlers. (Phase 181)
+   */
+  private _renderStubRibbon(
+    slotEl: HTMLElement,
+    sectionLabel: string,
+    items: readonly { key: string; label: string; icon: string }[],
+  ): void {
+    const container = document.createElement('div');
+    container.className = 'stub-ribbon';
+
+    const list = document.createElement('ul');
+    list.className = 'stub-ribbon__list';
+
+    const section = document.createElement('li');
+    section.className = 'stub-ribbon__section';
+
+    const header = document.createElement('span');
+    header.className = 'stub-ribbon__section-header';
+    header.textContent = sectionLabel;
+    section.appendChild(header);
+
+    const itemsList = document.createElement('ul');
+    itemsList.className = 'stub-ribbon__section-items';
+
+    for (const def of items) {
+      const li = document.createElement('li');
+      const btn = document.createElement('button');
+      btn.className = 'stub-ribbon__item';
+      btn.disabled = true;
+
+      const iconSpan = document.createElement('span');
+      iconSpan.className = 'stub-ribbon__item-icon';
+      iconSpan.innerHTML = iconSvg(def.icon, 18);
+
+      const labelSpan = document.createElement('span');
+      labelSpan.className = 'stub-ribbon__item-label';
+      labelSpan.textContent = def.label;
+
+      btn.appendChild(iconSpan);
+      btn.appendChild(labelSpan);
+      li.appendChild(btn);
+      itemsList.appendChild(li);
+    }
+
+    section.appendChild(itemsList);
+    list.appendChild(section);
+    container.appendChild(list);
+    slotEl.appendChild(container);
+  }
+
+  /**
    * Creates and appends the sync indicator to the status slot (STAT-06).
    * Called on construction and after status slot clearing on canvas switch.
    */
@@ -353,6 +422,8 @@ export class SuperWidget {
   get rootEl(): HTMLElement { return this._root; }
   get mounted(): boolean { return this._mounted; }
   get ribbonEl(): HTMLElement { return this._ribbonEl; }
+  get storiesRibbonEl(): HTMLElement { return this._storiesRibbonEl; }
+  get datasetsRibbonEl(): HTMLElement { return this._datasetsRibbonEl; }
 
   // CommandBar accessor (D-03, D-06)
   getCommandBar(): CommandBar | undefined { return this._commandBar; }
