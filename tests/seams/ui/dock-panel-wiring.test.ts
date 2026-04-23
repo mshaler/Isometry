@@ -239,6 +239,76 @@ describe('Dock → PanelManager wiring', () => {
 		expect(integrateGroup, 'integrate group must exist in PRODUCTION_GROUPS').toBeDefined();
 		expect(integrateGroup!.panelIds.length).toBeGreaterThan(0);
 	});
+
+	// -----------------------------------------------------------------------
+	// Sidecar: syncSlots fires on every show/hide so caller can drive visibility
+	// -----------------------------------------------------------------------
+	it('syncSlots fires when showGroup/hideGroup toggles panels', () => {
+		const { manager, syncSlots } = buildProductionWiring();
+
+		manager.showGroup('integrate');
+		expect(syncSlots).toHaveBeenCalled();
+
+		const callsBefore = syncSlots.mock.calls.length;
+		manager.hideGroup('integrate');
+		expect(syncSlots.mock.calls.length).toBeGreaterThan(callsBefore);
+	});
+
+	it('syncSlots fires when toggle changes panel visibility', () => {
+		const { manager, syncSlots } = buildProductionWiring();
+
+		manager.toggle('latch');
+		const callsAfterShow = syncSlots.mock.calls.length;
+		expect(callsAfterShow).toBeGreaterThan(0);
+
+		manager.toggle('latch');
+		expect(syncSlots.mock.calls.length).toBeGreaterThan(callsAfterShow);
+	});
+
+	it('panel visibility is queryable inside syncSlots callback timing', () => {
+		// Simulates the production syncSlots pattern: check isVisible to decide sidecar state
+		const registry = new PanelRegistry();
+		for (const meta of INLINE_PANEL_METAS) {
+			registry.register(meta, () => stubFactory());
+		}
+		for (const meta of STUB_PANEL_METAS) {
+			registry.register(meta, () => stubFactory());
+		}
+		const slots: SlotConfig[] = PRODUCTION_SLOTS.map((s) => ({
+			...s,
+			container: document.createElement('div'),
+		}));
+
+		let sidecarVisible = false;
+		let mgr: PanelManager;
+		// eslint-disable-next-line prefer-const
+		mgr = new PanelManager({
+			registry,
+			slots,
+			groups: PRODUCTION_GROUPS,
+			syncSlots: () => {
+				// Mirror production logic: sidecar visible when any panel is visible
+				sidecarVisible = mgr.isVisible('properties')
+					|| mgr.isVisible('projection')
+					|| mgr.isVisible('latch')
+					|| mgr.isVisible('formulas-stub');
+			},
+		});
+
+		expect(sidecarVisible).toBe(false);
+
+		mgr.showGroup('integrate'); // shows properties
+		expect(sidecarVisible).toBe(true);
+
+		mgr.hideGroup('integrate');
+		expect(sidecarVisible).toBe(false);
+
+		mgr.toggle('latch');
+		expect(sidecarVisible).toBe(true);
+
+		mgr.toggle('latch');
+		expect(sidecarVisible).toBe(false);
+	});
 });
 
 describe('DOCK_DEFS structural integrity', () => {

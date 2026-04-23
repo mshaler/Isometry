@@ -1736,7 +1736,14 @@ async function main(): Promise<void> {
 			{ name: 'integrate', panelIds: ['properties'] },
 		],
 		syncSlots: () => {
-			// Sidecar column visibility is managed by setSidecarVisible() via onSidecarChange
+			// Show sidecar when any panel in any slot is visible; hide when all hidden.
+			// This covers both dock-toggled panels (integrate, analyze) and
+			// canvas-bound explorers (onSidecarChange also calls setSidecarVisible).
+			const anyVisible = panelManager!.isVisible('properties')
+				|| panelManager!.isVisible('projection')
+				|| panelManager!.isVisible('latch')
+				|| panelManager!.isVisible('formulas-stub');
+			superWidget.setSidecarVisible(anyVisible);
 		},
 	});
 
