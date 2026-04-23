@@ -944,8 +944,8 @@ async function main(): Promise<void> {
 					return;
 				}
 				if (itemKey === 'formula') {
-					panelManager.toggle('formulas');
-					dockNav.setItemPressed('analyze:formula', panelManager.isVisible('formulas'));
+					panelManager.toggle('formulas-stub');
+					dockNav.setItemPressed('analyze:formula', panelManager.isVisible('formulas-stub'));
 					return;
 				}
 			}
@@ -1730,9 +1730,11 @@ async function main(): Promise<void> {
 			{ id: 'properties', container: propertiesChildEl, slot: 'top' },
 			{ id: 'projection', container: projectionChildEl, slot: 'top' },
 			{ id: 'latch', container: latchFiltersChildEl, slot: 'bottom' },
-			{ id: 'formulas', container: formulasChildEl, slot: 'bottom' },
+			{ id: 'formulas-stub', container: formulasChildEl, slot: 'bottom' },
 		],
-		groups: [],
+		groups: [
+			{ name: 'integrate', panelIds: ['properties'] },
+		],
 		syncSlots: () => {
 			// Sidecar column visibility is managed by setSidecarVisible() via onSidecarChange
 		},
@@ -1746,7 +1748,7 @@ async function main(): Promise<void> {
 	if (panelManager.isVisible('latch')) {
 		dockNav.setItemPressed('analyze:filter', true);
 	}
-	if (panelManager.isVisible('formulas')) {
+	if (panelManager.isVisible('formulas-stub')) {
 		dockNav.setItemPressed('analyze:formula', true);
 	}
 
