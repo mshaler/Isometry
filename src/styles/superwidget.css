@@ -37,13 +37,13 @@
   grid-template-columns: 1fr 0;
   grid-template-rows: auto auto auto auto auto 1fr auto;
   grid-template-areas:
-    "header   sidecar"
-    "tabs     sidecar"
-    "ribbon   sidecar"
-    "stories  sidecar"
-    "datasets sidecar"
+    "header   header"
+    "tabs     tabs"
+    "ribbon   ribbon"
+    "stories  stories"
+    "datasets datasets"
     "canvas   sidecar"
-    "status   sidecar";
+    "status   status";
   transition: grid-template-columns var(--transition-normal) ease;
   flex: 1 1 auto;
   min-height: 0;
@@ -454,13 +454,13 @@
 }
 
 [data-component="superwidget"] [data-sidecar-slot="top-slot"] {
-  flex: 1 1 auto;
+  flex: 1 1 50%;
   overflow: hidden auto; /* intentional: hidden on x to prevent sidecar content from causing horizontal scroll */
   min-height: 0;
 }
 
 [data-component="superwidget"] [data-sidecar-slot="bottom-slot"] {
-  flex: 0 0 auto;
-  max-height: 40%;
+  flex: 1 1 50%;
   overflow: hidden auto; /* intentional: hidden on x to prevent sidecar content from causing horizontal scroll */
+  min-height: 0;
 }
