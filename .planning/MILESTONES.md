@@ -1,5 +1,19 @@
 # Milestones
 
+## v14.0 Horizontal Ribbon Navigation (Shipped: 2026-04-23)
+
+**Phases completed:** 3 phases, 4 plans, 8 tasks
+
+**Key accomplishments:**
+
+- Dock wiring repair: Help section handlers + mount-time state sync ensure all dock items respond correctly on load
+- SuperWidget CSS grid restructured from sidebar+content to full-width ribbon layout with 7 rows
+- DockNav rewritten as horizontal ribbon bar with verb-noun sections, overflow fade masks, and horizontal roving tabindex
+- Stories and Datasets stub ribbon rows added as disabled placeholders with data-driven Lucide icons (6 new icons)
+- 19/19 requirements satisfied (WIRE-01..06, HRIB-01..07, STOR-01..03, DSET-01..03)
+
+---
+
 ## v13.3 SuperWidget Shell (Shipped: 2026-04-22)
 
 **Phases completed:** 5 phases, 11 plans, 4 tasks
