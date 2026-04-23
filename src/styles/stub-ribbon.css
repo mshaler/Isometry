@@ -1,0 +1,81 @@
+/* Stub ribbon rows — Phase 181
+ * Disabled placeholder ribbons for Stories and Datasets.
+ * Follows dock-nav.css class naming pattern with .stub-ribbon__ prefix.
+ */
+
+.stub-ribbon {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  padding: 0 var(--space-xl);
+  gap: var(--space-md);
+}
+
+.stub-ribbon__list {
+  display: flex;
+  align-items: center;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  gap: var(--space-md);
+}
+
+.stub-ribbon__section {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.stub-ribbon__section-header {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  height: 16px;
+  line-height: 1.0;
+  padding-top: var(--space-md);
+  user-select: none;
+}
+
+.stub-ribbon__section-items {
+  display: flex;
+  align-items: center;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  gap: var(--space-xs);
+}
+
+.stub-ribbon__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  height: 32px;
+  padding: 0 var(--space-md);
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  font-weight: 400;
+  line-height: 1.2;
+  cursor: not-allowed;
+  pointer-events: none;
+  user-select: none;
+}
+
+.stub-ribbon__item-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stub-ribbon__item-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.stub-ribbon__item-label {
+  white-space: nowrap;
+}

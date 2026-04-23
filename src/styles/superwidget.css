@@ -35,13 +35,15 @@
    * ---------------------------------------------------------------------- */
   display: grid;
   grid-template-columns: 1fr 0;
-  grid-template-rows: auto auto auto 1fr auto;
+  grid-template-rows: auto auto auto auto auto 1fr auto;
   grid-template-areas:
-    "header  sidecar"
-    "tabs    sidecar"
-    "ribbon  sidecar"
-    "canvas  sidecar"
-    "status  sidecar";
+    "header   sidecar"
+    "tabs     sidecar"
+    "ribbon   sidecar"
+    "stories  sidecar"
+    "datasets sidecar"
+    "canvas   sidecar"
+    "status   sidecar";
   transition: grid-template-columns var(--transition-normal) ease;
   flex: 1 1 auto;
   min-height: 0;
@@ -65,6 +67,30 @@
   overflow: hidden;
   position: relative;
   z-index: 2;
+}
+
+[data-component="superwidget"] [data-slot="stories-ribbon"] {
+  grid-area: stories;
+  height: var(--sw-ribbon-height);
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-subtle);
+  overflow: hidden;
+  position: relative;
+  z-index: 2;
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+[data-component="superwidget"] [data-slot="datasets-ribbon"] {
+  grid-area: datasets;
+  height: var(--sw-ribbon-height);
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-subtle);
+  overflow: hidden;
+  position: relative;
+  z-index: 2;
+  cursor: not-allowed;
+  opacity: 0.5;
 }
 
 /* ---------------------------------------------------------------------------

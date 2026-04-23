@@ -6,6 +6,7 @@
 //   - SECTION_DEFS array (sidebar grouping)
 //   - viewOrder array (Cmd+1-9 view switching order)
 //   - DockSectionDef interface and DOCK_DEFS array (Phase 146 dock taxonomy)
+//   - STORIES_STUB_DEFS and DATASETS_STUB_DEFS (Phase 181 stub ribbon rows)
 
 import type { ViewType } from '../providers/types';
 
@@ -177,4 +178,21 @@ export const DOCK_DEFS: readonly DockSectionDef[] = [
 			{ key: 'help-page', label: 'Help', icon: 'help-circle' },
 		],
 	},
+];
+
+// ---------------------------------------------------------------------------
+// Stub ribbon definitions — Phase 181 (STOR-01..03, DSET-01..03)
+// Permanently disabled placeholder rows for Stories and Datasets.
+// ---------------------------------------------------------------------------
+
+export const STORIES_STUB_DEFS: readonly SidebarItemDef[] = [
+	{ key: 'story-new', label: 'New Story', icon: 'file-plus' },
+	{ key: 'story-play', label: 'Present', icon: 'presentation' },
+	{ key: 'story-share', label: 'Publish', icon: 'send' },
+];
+
+export const DATASETS_STUB_DEFS: readonly SidebarItemDef[] = [
+	{ key: 'dataset-import', label: 'Import', icon: 'upload' },
+	{ key: 'dataset-export', label: 'Export', icon: 'download' },
+	{ key: 'dataset-browse', label: 'Browse', icon: 'hard-drive' },
 ];
