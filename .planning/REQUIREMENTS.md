@@ -28,15 +28,15 @@ Requirements for Horizontal Ribbon Navigation milestone.
 
 ### Stories Stub
 
-- [ ] **STOR-01**: Stories ribbon row renders below the navigation ribbon
-- [ ] **STOR-02**: Stories ribbon contains 3-4 placeholder Lucide icons with labels (e.g., "New Story", "Play", "Share")
-- [ ] **STOR-03**: All Stories items are visually disabled (greyed out, cursor: not-allowed, no click handler)
+- [x] **STOR-01**: Stories ribbon row renders below the navigation ribbon
+- [x] **STOR-02**: Stories ribbon contains 3-4 placeholder Lucide icons with labels (e.g., "New Story", "Play", "Share")
+- [x] **STOR-03**: All Stories items are visually disabled (greyed out, cursor: not-allowed, no click handler)
 
 ### Datasets Stub
 
-- [ ] **DSET-01**: Datasets ribbon row renders below the Stories ribbon
-- [ ] **DSET-02**: Datasets ribbon contains 3-4 placeholder Lucide icons with labels (e.g., "Import", "Export", "Browse")
-- [ ] **DSET-03**: All Datasets items are visually disabled (greyed out, cursor: not-allowed, no click handler)
+- [x] **DSET-01**: Datasets ribbon row renders below the Stories ribbon
+- [x] **DSET-02**: Datasets ribbon contains 3-4 placeholder Lucide icons with labels (e.g., "Import", "Export", "Browse")
+- [x] **DSET-03**: All Datasets items are visually disabled (greyed out, cursor: not-allowed, no click handler)
 
 ## Future Requirements
 
@@ -81,12 +81,12 @@ Deferred to later milestones.
 | HRIB-05 | Phase 180 | Complete |
 | HRIB-06 | Phase 180 | Complete |
 | HRIB-07 | Phase 180 | Complete |
-| STOR-01 | Phase 181 | Pending |
-| STOR-02 | Phase 181 | Pending |
-| STOR-03 | Phase 181 | Pending |
-| DSET-01 | Phase 181 | Pending |
-| DSET-02 | Phase 181 | Pending |
-| DSET-03 | Phase 181 | Pending |
+| STOR-01 | Phase 181 | Complete |
+| STOR-02 | Phase 181 | Complete |
+| STOR-03 | Phase 181 | Complete |
+| DSET-01 | Phase 181 | Complete |
+| DSET-02 | Phase 181 | Complete |
+| DSET-03 | Phase 181 | Complete |
 
 **Coverage:**
 - v14.0 requirements: 19 total
