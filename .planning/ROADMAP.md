@@ -42,7 +42,7 @@
 ## Phases
 
 <details>
-<summary>✅ Phases 1-178 -- archived milestones (see .planning/milestones/)</summary>
+<summary>Phases 1-178 -- archived milestones (see .planning/milestones/)</summary>
 
 All phases 1-178 are archived in `.planning/milestones/` under their respective milestone directories.
 
@@ -98,7 +98,9 @@ Plans:
   2. A Datasets ribbon row is visible below the Stories ribbon with labeled placeholder items (e.g., "Import", "Export", "Browse")
   3. All Stories and Datasets items are visually greyed out and display a not-allowed cursor on hover
   4. Clicking any Stories or Datasets item produces no action or navigation change
-**Plans**: TBD
+**Plans:** 1 plans
+Plans:
+- [ ] 181-01-PLAN.md — Add Stories and Datasets stub ribbon rows with disabled placeholder items
 **UI hint**: yes
 
 ## Progress Table
@@ -107,4 +109,4 @@ Plans:
 |-------|----------------|--------|-----------|
 | 179. Dock Wiring Repair | 1/1 | Complete    | 2026-04-22 |
 | 180. Horizontal Ribbon Layout | 2/2 | Complete    | 2026-04-22 |
-| 181. Stub Ribbon Rows | 0/? | Not started | - |
+| 181. Stub Ribbon Rows | 0/1 | Not started | - |
