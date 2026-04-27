@@ -9,12 +9,12 @@ Requirements for this architecture-only milestone. Each maps to roadmap phases. 
 
 ### Three-Explorer Specification (WA-1)
 
-- [ ] **SPEC-01**: Three-explorer boundary spec defines Formulas (data-layer), Marks (view-layer), Audits (semantic-flag) with one-sentence type signatures per chip well category
-- [ ] **SPEC-02**: Composition rules within and across categories documented (AND-composition for Filters, lexicographic for Sorts, DAG for Calculations)
-- [ ] **SPEC-03**: Explicit out-of-scope list per explorer (Formulas never owns GROUP BY, Marks never alters row membership, Audits never excludes)
-- [ ] **SPEC-04**: DSL example lexicon appendix with canonical examples for all downstream WAs to reference verbatim
-- [ ] **SPEC-05**: Anti-feature documentation (OR across filter chips, Marks filtering, FormulasProvider owning GROUP BY, inline cell editing)
-- [ ] **SPEC-06**: Every example from original `Formulas Explorer discussion.md` placed unambiguously into one category
+- [x] **SPEC-01**: Three-explorer boundary spec defines Formulas (data-layer), Marks (view-layer), Audits (semantic-flag) with one-sentence type signatures per chip well category
+- [x] **SPEC-02**: Composition rules within and across categories documented (AND-composition for Filters, lexicographic for Sorts, DAG for Calculations)
+- [x] **SPEC-03**: Explicit out-of-scope list per explorer (Formulas never owns GROUP BY, Marks never alters row membership, Audits never excludes)
+- [x] **SPEC-04**: DSL example lexicon appendix with canonical examples for all downstream WAs to reference verbatim
+- [x] **SPEC-05**: Anti-feature documentation (OR across filter chips, Marks filtering, FormulasProvider owning GROUP BY, inline cell editing)
+- [x] **SPEC-06**: Every example from original `Formulas Explorer discussion.md` placed unambiguously into one category
 
 ### Compilation Pipeline (WA-2)
 
@@ -67,8 +67,8 @@ Requirements for this architecture-only milestone. Each maps to roadmap phases. 
 
 ### Regression Guards
 
-- [ ] **GARD-01**: All 14 FE-RG guards from handoff document present in specs with verification checks
-- [ ] **GARD-02**: FE-RG-15 (DSL example lexicon consistency across WAs) documented and enforceable
+- [x] **GARD-01**: All 14 FE-RG guards from handoff document present in specs with verification checks
+- [x] **GARD-02**: FE-RG-15 (DSL example lexicon consistency across WAs) documented and enforceable
 - [ ] **GARD-03**: FE-RG-16 (Marks annotation return type `Map<rowId, string[]>`) documented as structural guard
 - [ ] **GARD-04**: FE-RG-17 (Calculation identifier allowlist against SchemaProvider) documented as structural guard
 
@@ -123,12 +123,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SPEC-01 | Phase 182 | Pending |
-| SPEC-02 | Phase 182 | Pending |
-| SPEC-03 | Phase 182 | Pending |
-| SPEC-04 | Phase 182 | Pending |
-| SPEC-05 | Phase 182 | Pending |
-| SPEC-06 | Phase 182 | Pending |
+| SPEC-01 | Phase 182 | Complete |
+| SPEC-02 | Phase 182 | Complete |
+| SPEC-03 | Phase 182 | Complete |
+| SPEC-04 | Phase 182 | Complete |
+| SPEC-05 | Phase 182 | Complete |
+| SPEC-06 | Phase 182 | Complete |
 | COMP-01 | Phase 184 | Pending |
 | COMP-02 | Phase 184 | Pending |
 | COMP-03 | Phase 184 | Pending |
@@ -160,8 +160,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | GEOM-06 | Phase 183 | Pending |
 | TMPL-01 | Phase 186 | Pending |
 | TMPL-02 | Phase 186 | Pending |
-| GARD-01 | Phase 182 | Pending |
-| GARD-02 | Phase 182 | Pending |
+| GARD-01 | Phase 182 | Complete |
+| GARD-02 | Phase 182 | Complete |
 | GARD-03 | Phase 184 | Pending |
 | GARD-04 | Phase 184 | Pending |
 

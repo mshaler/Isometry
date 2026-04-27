@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v15.0
 milestone_name: Formulas Explorer Architecture
-status: Roadmap defined, ready to begin Phase 182
-stopped_at: Phase 182 context gathered
-last_updated: "2026-04-27T17:50:53.644Z"
-last_activity: 2026-04-27 — Roadmap created for v15.0
+status: verifying
+stopped_at: Completed 182-three-explorer-boundary-spec/182-01-PLAN.md
+last_updated: "2026-04-27T18:21:19.811Z"
+last_activity: 2026-04-27
 progress:
   total_phases: 7
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
+  completed_phases: 1
+  total_plans: 1
+  completed_plans: 1
   percent: 0
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-27)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** v15.0 Formulas Explorer Architecture — Phase 182 (Three-Explorer Boundary Spec)
+**Current focus:** Phase 182 — three-explorer-boundary-spec
 
 ## Current Position
 
-Phase: 182 (not started)
-Plan: —
-Status: Roadmap defined, ready to begin Phase 182
-Last activity: 2026-04-27 — Roadmap created for v15.0
+Phase: 182 (three-explorer-boundary-spec) — EXECUTING
+Plan: 1 of 1
+Status: Phase complete — ready for verification
+Last activity: 2026-04-27
 
 ```
 Progress: [░░░░░░░░░░░░░░░░░░░░] 0% (0/7 phases)
@@ -61,6 +61,9 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 
 **Deliverable type:** All outputs are .md specification files in `.planning/milestones/v15.0-formulas-explorer/`. No code ships.
 
+- [Phase 182-three-explorer-boundary-spec]: Formulas/Marks/Audits decompose the original single-explorer hypothesis along operation kind: data-layer / view-layer / semantic-flag
+- [Phase 182-three-explorer-boundary-spec]: DSL example lexicon (Appendix A of 01-three-explorer-spec.md) is single canonical reference; downstream WAs must cross-reference verbatim (FE-RG-15)
+
 ### Blockers/Concerns
 
 (None)
@@ -71,6 +74,6 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 
 ## Session Continuity
 
-Last session: 2026-04-27T17:50:53.635Z
-Stopped at: Phase 182 context gathered
+Last session: 2026-04-27T18:21:19.808Z
+Stopped at: Completed 182-three-explorer-boundary-spec/182-01-PLAN.md
 Resume with: `/gsd:plan-phase 182`

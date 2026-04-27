@@ -51,7 +51,7 @@ All phases 1-181 are archived in `.planning/milestones/` under their respective 
 
 ### v15.0 Formulas Explorer Architecture
 
-- [ ] **Phase 182: Three-Explorer Boundary Spec** - Define the fundamental three-way split (Formulas/Marks/Audits) with type signatures, composition rules, and regression guards
+- [x] **Phase 182: Three-Explorer Boundary Spec** - Define the fundamental three-way split (Formulas/Marks/Audits) with type signatures, composition rules, and regression guards (completed 2026-04-27)
 - [ ] **Phase 183: Chip-Well Geometry Contract** - Specify the reusable spatial primitive for chip wells, drag states, and accessibility contract
 - [ ] **Phase 184: Compilation Pipeline Spec** - Define the chip-arrangement-to-SQL compilation pipeline, dependency resolution, and annotation algorithms
 - [ ] **Phase 185: Formula Card Schema** - Define the SQLite DDL, versioning strategy, type-signature validation, and sync conflict resolution for formula_cards
@@ -71,9 +71,9 @@ All phases 1-181 are archived in `.planning/milestones/` under their respective 
   3. Each explorer has a documented out-of-scope list that explicitly names the operations it must never perform (Formulas never owns GROUP BY, Marks never alters row membership, Audits never excludes rows)
   4. The DSL example lexicon appendix contains canonical examples sufficient for authors of WA-2 through WA-7 to reference without re-reading the full discussion document
   5. All 14 FE-RG guards from the handoff document are present in the spec with verification checks, and FE-RG-15 (cross-WA DSL consistency) is documented as an enforceable policy
-**Plans:** 1 plan
+**Plans:** 1/1 plans complete
 Plans:
-- [ ] 182-01-PLAN.md — Write three-explorer boundary spec with type signatures, composition rules, example placement, DSL lexicon, and regression guards
+- [x] 182-01-PLAN.md — Write three-explorer boundary spec with type signatures, composition rules, example placement, DSL lexicon, and regression guards
 
 ### Phase 183: Chip-Well Geometry Contract
 **Goal**: A standalone, Formulas-agnostic geometry contract document defines the chip-well spatial primitive so that any future explorer can reuse it without inheriting Formulas-specific concepts
@@ -149,7 +149,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 182. Three-Explorer Boundary Spec | 0/1 | Planned | - |
+| 182. Three-Explorer Boundary Spec | 1/1 | Complete   | 2026-04-27 |
 | 183. Chip-Well Geometry Contract | 0/TBD | Not started | - |
 | 184. Compilation Pipeline Spec | 0/TBD | Not started | - |
 | 185. Formula Card Schema | 0/TBD | Not started | - |
