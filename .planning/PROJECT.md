@@ -264,6 +264,29 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 
 ### Active
 
+## Current Milestone: v15.0 Formulas Explorer Architecture
+
+**Goal:** Produce the architecture specifications that decompose the original Formulas Explorer into three peer explorers (Formulas, Marks, Audits), define their compilation pipeline, and establish a reusable chip-well geometry contract. No code ships — clarification milestone.
+
+**Target features:**
+- Three-Explorer boundary spec (Formulas = data-layer, Marks = view-layer, Audits = semantic-flags)
+- Compilation pipeline spec (chip arrangement → SQL with bind values, post-query annotation)
+- Formula Card schema and chip↔card promotion lifecycle
+- Golden-test corpus plan (30+ test cases, anti-patching rule)
+- UX interaction spec (chip wells, explain panel, error states)
+- Chip-well geometry contract (reusable spatial primitive, pointer-event DnD)
+- Operator-contract template (fork from geometry contract template)
+
+**Key decisions (from milestone questioning):**
+- Navigation: single "Formulas" parent in Analyze ribbon, three sub-explorers
+- Marks v1: class assignment only (predicate → CSS class)
+- Audit UI surface: deferred to implementation milestone
+- Type signatures: extensible for richer types (arrays, JSON, geo shapes)
+- Versioning: retain all versions
+- Card scope: dataset-scoped at v1
+- Cross-well drag: copy by default, modifier key for move
+- Template fork: create operator-contract template now
+
 ### Out of Scope
 
 - Conflict resolution UI for manual merge -- last-writer-wins is the shipping strategy (v4.1)
@@ -673,4 +696,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-23 after v14.0 Horizontal Ribbon Navigation milestone*
+*Last updated: 2026-04-27 after v15.0 Formulas Explorer Architecture milestone start*
