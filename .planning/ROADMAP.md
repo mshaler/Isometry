@@ -100,9 +100,9 @@ Plans:
   4. The Marks post-query annotation algorithm produces `Map<rowId, string[]>` CSS class assignments and the Audits annotation produces flag/badge metadata, with both algorithms explicitly prohibited from filtering the result set
   5. The explain panel contract specifies the exact format of compiled SQL shown to users, including how bind-value placeholders are rendered
   6. Ten worked examples cover the full range from single-chip arrangements to multi-chip combinations, and each example shows the expected SQL output verbatim
-**Plans**: 1 plan
+**Plans:** 1 plan
 Plans:
-- [ ] 183-01-PLAN.md — Write complete chip-well geometry contract (all 12 template sections)
+- [ ] 184-01-PLAN.md — Write compilation pipeline spec with clause mapping, dependency graph, annotation algorithms, explain panel, 10 worked examples, and regression guards
 
 ### Phase 185: Formula Card Schema
 **Goal**: The `formula_cards` SQLite table is fully specified with DDL, type-signature validation algorithm, versioning strategy, promotion API signatures, and sync conflict resolution for all three conflict scenarios
@@ -163,7 +163,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 182. Three-Explorer Boundary Spec | 1/1 | Complete    | 2026-04-27 |
 | 183. Chip-Well Geometry Contract | 1/1 | Complete    | 2026-04-27 |
-| 184. Compilation Pipeline Spec | 0/TBD | Not started | - |
+| 184. Compilation Pipeline Spec | 0/1 | Planned | - |
 | 185. Formula Card Schema | 0/TBD | Not started | - |
 | 186. Operator-Contract Template | 0/TBD | Not started | - |
 | 187. Golden-Test Corpus Plan | 0/TBD | Not started | - |
