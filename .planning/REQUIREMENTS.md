@@ -29,11 +29,11 @@ Requirements for this architecture-only milestone. Each maps to roadmap phases. 
 
 ### Formula Card Schema (WA-3)
 
-- [ ] **CARD-01**: SQLite DDL for `formula_cards` table (id, canonical_id, title, dsl, sql, content, version, scope, type_signature, dependencies, provenance, performance_hint, visibility)
-- [ ] **CARD-02**: Type-signature validation algorithm with worked examples covering existing facet types + extensible for richer types
-- [ ] **CARD-03**: Versioning strategy (every save creates new version, canonical_id for version-independent references)
-- [ ] **CARD-04**: Chip↔Card promotion API signatures (function names, parameter types, return types)
-- [ ] **CARD-05**: Sync conflict resolution specified for 3 scenarios (concurrent edit, delete-while-editing, type-signature change)
+- [x] **CARD-01**: SQLite DDL for `formula_cards` table (id, canonical_id, title, dsl, sql, content, version, scope, type_signature, dependencies, provenance, performance_hint, visibility)
+- [x] **CARD-02**: Type-signature validation algorithm with worked examples covering existing facet types + extensible for richer types
+- [x] **CARD-03**: Versioning strategy (every save creates new version, canonical_id for version-independent references)
+- [x] **CARD-04**: Chip↔Card promotion API signatures (function names, parameter types, return types)
+- [x] **CARD-05**: Sync conflict resolution specified for 3 scenarios (concurrent edit, delete-while-editing, type-signature change)
 
 ### Golden-Test Corpus Plan (WA-4)
 
@@ -137,11 +137,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | COMP-06 | Phase 184 | Complete |
 | COMP-07 | Phase 184 | Complete |
 | COMP-08 | Phase 184 | Complete |
-| CARD-01 | Phase 185 | Pending |
-| CARD-02 | Phase 185 | Pending |
-| CARD-03 | Phase 185 | Pending |
-| CARD-04 | Phase 185 | Pending |
-| CARD-05 | Phase 185 | Pending |
+| CARD-01 | Phase 185 | Complete |
+| CARD-02 | Phase 185 | Complete |
+| CARD-03 | Phase 185 | Complete |
+| CARD-04 | Phase 185 | Complete |
+| CARD-05 | Phase 185 | Complete |
 | TEST-01 | Phase 187 | Pending |
 | TEST-02 | Phase 187 | Pending |
 | TEST-03 | Phase 187 | Pending |

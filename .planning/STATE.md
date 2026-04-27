@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v15.0
 milestone_name: Formulas Explorer Architecture
 status: verifying
-stopped_at: Phase 185 context gathered
-last_updated: "2026-04-27T22:08:11.232Z"
+stopped_at: Completed 185-01-PLAN.md
+last_updated: "2026-04-27T22:33:43.953Z"
 last_activity: 2026-04-27
 progress:
   total_phases: 7
-  completed_phases: 3
-  total_plans: 3
-  completed_plans: 3
+  completed_phases: 4
+  total_plans: 4
+  completed_plans: 4
   percent: 0
 ---
 
@@ -21,12 +21,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-27)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** Phase 184 — compilation-pipeline-spec
+**Current focus:** Phase 185 — formula-card-schema
 
 ## Current Position
 
-Phase: 185
-Plan: Not started
+Phase: 185 (formula-card-schema) — EXECUTING
+Plan: 1 of 1
 Status: Phase complete — ready for verification
 Last activity: 2026-04-27
 
@@ -68,6 +68,7 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 - [Phase 184]: CycleError.participants carries chip IDs for chip-well UI highlighting
 - [Phase 184]: Cross-category Filtered Totals resolved via CASE WHEN inline for sql.js compatibility
 - [Phase 184]: Explain panel shows raw (sql_text, [bind_values]) tuple with ? placeholders intact
+- [Phase 185-formula-card-schema]: D-01..D-08 honored: JSON TEXT for structured fields, separate dsl/sql columns, keep-both sync, uniform strategy, promoteToCard/hydrateChips/validatePromotion promotion API, visibility enum with locked state
 
 ### Blockers/Concerns
 
@@ -79,6 +80,6 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 
 ## Session Continuity
 
-Last session: 2026-04-27T22:08:11.224Z
-Stopped at: Phase 185 context gathered
+Last session: 2026-04-27T22:33:43.950Z
+Stopped at: Completed 185-01-PLAN.md
 Resume with: `/gsd:plan-phase 182`

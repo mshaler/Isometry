@@ -54,7 +54,7 @@ All phases 1-181 are archived in `.planning/milestones/` under their respective 
 - [x] **Phase 182: Three-Explorer Boundary Spec** - Define the fundamental three-way split (Formulas/Marks/Audits) with type signatures, composition rules, and regression guards (completed 2026-04-27)
 - [x] **Phase 183: Chip-Well Geometry Contract** - Specify the reusable spatial primitive for chip wells, drag states, and accessibility contract (completed 2026-04-27)
 - [x] **Phase 184: Compilation Pipeline Spec** - Define the chip-arrangement-to-SQL compilation pipeline, dependency resolution, and annotation algorithms (completed 2026-04-27)
-- [ ] **Phase 185: Formula Card Schema** - Define the SQLite DDL, versioning strategy, type-signature validation, and sync conflict resolution for formula_cards
+- [x] **Phase 185: Formula Card Schema** - Define the SQLite DDL, versioning strategy, type-signature validation, and sync conflict resolution for formula_cards (completed 2026-04-27)
 - [ ] **Phase 186: Operator-Contract Template** - Fork the geometry contract template into an operator-surface variant with usage guide
 - [ ] **Phase 187: Golden-Test Corpus Plan** - Define the fixture dataset, test case corpus, test runner architecture, and anti-patching policy
 - [ ] **Phase 188: UX Interaction Spec** - Specify live preview behavior, reversibility, error states, promotion UI, navigator placement, and WKWebView constraints
@@ -116,7 +116,7 @@ Plans:
   5. All three sync conflict scenarios (concurrent edit, delete-while-editing, type-signature change) have documented resolution strategies with explicit outcomes
 **Plans**: 1 plan
 Plans:
-- [ ] 185-01-PLAN.md — Write formula card schema spec (DDL, type-signature validation, versioning, promotion API, sync conflict resolution)
+- [x] 185-01-PLAN.md — Write formula card schema spec (DDL, type-signature validation, versioning, promotion API, sync conflict resolution)
 
 ### Phase 186: Operator-Contract Template
 **Goal**: A new operator-contract template variant exists as a standalone document, forked from the geometry contract template, covering operator surfaces rather than spatial layout, with a usage guide that distinguishes the two templates
@@ -164,7 +164,7 @@ Plans:
 | 182. Three-Explorer Boundary Spec | 1/1 | Complete    | 2026-04-27 |
 | 183. Chip-Well Geometry Contract | 1/1 | Complete    | 2026-04-27 |
 | 184. Compilation Pipeline Spec | 1/1 | Complete    | 2026-04-27 |
-| 185. Formula Card Schema | 0/1 | Not started | - |
+| 185. Formula Card Schema | 1/1 | Complete   | 2026-04-27 |
 | 186. Operator-Contract Template | 0/TBD | Not started | - |
 | 187. Golden-Test Corpus Plan | 0/TBD | Not started | - |
 | 188. UX Interaction Spec | 0/TBD | Not started | - |
