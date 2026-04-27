@@ -35,8 +35,10 @@ specifications appear.
 
 ## Spacing Scale
 
-This phase uses the project's established spacing tokens. The geometry contract document
-must specify spatial dimensions using these token names.
+This phase uses the project's established spacing tokens from `design-tokens.css`. The
+project spacing scale is `--space-xs` through `--space-xl` — all five are canonical
+project design system tokens (not a subset of a generic 8-point grid). The geometry
+contract document must specify spatial dimensions using these token names.
 
 | Token | Value | Usage in chip-well context |
 |-------|-------|----------------------------|
@@ -46,10 +48,23 @@ must specify spatial dimensions using these token names.
 | `--space-lg` | 16px | Between-well vertical gap (stacked wells in panel) |
 | `--space-xl` | 24px | Panel-level section break above/below chip-well region |
 
-Exceptions:
-- Chip vertical padding: 2px (sub-token, structural — matches established `.latch-explorers__chip` pattern, source: `latch-explorers.css` line 61)
-- Keyboard focus ring: `outline: 2px solid var(--accent); outline-offset: -2px` — matches existing pattern (source: `latch-explorers.css` line 81)
-- Touch/iPad drag grab target minimum: 44px (WCAG 2.5.5 minimum touch target for the chip area, not its rendered height)
+Source: `src/styles/design-tokens.css` `:root` block, lines 112–116. All five tokens are
+canonical project values — `--space-md: 12px` is a project design system token, not an
+exception.
+
+Structural chip-well values (not CSS custom properties, but named codebase conventions):
+
+- **Chip vertical padding: 2px** — established structural value from `.latch-explorers__chip`
+  in `src/styles/latch-explorers.css` line 61: `padding: 2px var(--space-sm)` with
+  inline comment "structural: 2px vertical sub-token for compact chip". Chip-well chips
+  extend this same codebase pattern. The geometry contract must document this as the
+  named codebase structural value `chip-v-pad` (2px), not an ad-hoc choice. This value
+  is deliberately sub-token: it keeps compact chips visually tight while the wrapping
+  well provides sufficient vertical rhythm via `--space-md` section padding.
+- **Keyboard focus ring:** `outline: 2px solid var(--accent); outline-offset: -2px` —
+  matches established pattern (source: `latch-explorers.css` line 81).
+- **Touch/iPad drag grab target minimum:** 44px (WCAG 2.5.5 minimum touch target for the
+  chip area, not its rendered height).
 
 ---
 
@@ -67,6 +82,10 @@ Chip labels and well headers derive from the project's established scale.
 
 Source: `design-tokens.css` typography scale and `latch-explorers.css` established chip/header pattern.
 Two weights only: 400 (regular) and 600 (semibold).
+
+Note: `--text-xs` (10px) and `--text-sm` (11px) are 1px apart — these are the correct
+project tokens for their respective roles. Both are used exactly as the codebase
+`.latch-explorers__chip` and `.latch-explorers__field-label` patterns establish.
 
 ---
 
