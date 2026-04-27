@@ -85,7 +85,9 @@ Plans:
   3. Every drag state (default, drag-source-active, drag-target-valid, drag-target-invalid, drop-rejected, promotion-prompt) has a defined visual treatment and pointer event behavior
   4. The keyboard equivalents and ARIA roles for all drag operations are documented so the contract can be implemented to WCAG 2.1 AA without additional design work
   5. The composition seams section names the interfaces to WA-2 (compilation pipeline) and WA-3 (Formula Card library) by interface name only, with no concrete implementation references
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [ ] 183-01-PLAN.md — Write complete chip-well geometry contract (all 12 template sections)
 
 ### Phase 184: Compilation Pipeline Spec
 **Goal**: The complete algorithm from chip arrangement to executed SQL (including bind-value protocol, dependency resolution, and post-query annotation for Marks and Audits) is specified with worked examples and structural regression guards
@@ -98,7 +100,9 @@ Plans:
   4. The Marks post-query annotation algorithm produces `Map<rowId, string[]>` CSS class assignments and the Audits annotation produces flag/badge metadata, with both algorithms explicitly prohibited from filtering the result set
   5. The explain panel contract specifies the exact format of compiled SQL shown to users, including how bind-value placeholders are rendered
   6. Ten worked examples cover the full range from single-chip arrangements to multi-chip combinations, and each example shows the expected SQL output verbatim
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [ ] 183-01-PLAN.md — Write complete chip-well geometry contract (all 12 template sections)
 
 ### Phase 185: Formula Card Schema
 **Goal**: The `formula_cards` SQLite table is fully specified with DDL, type-signature validation algorithm, versioning strategy, promotion API signatures, and sync conflict resolution for all three conflict scenarios
@@ -110,7 +114,9 @@ Plans:
   3. The versioning strategy document states that every save creates a new version row and that canonical_id is the stable identity used for cross-version references
   4. The chip-to-card promotion API signatures (function names, parameter types, return types) are defined so an implementer can write the function stubs without making design decisions
   5. All three sync conflict scenarios (concurrent edit, delete-while-editing, type-signature change) have documented resolution strategies with explicit outcomes
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [ ] 183-01-PLAN.md — Write complete chip-well geometry contract (all 12 template sections)
 
 ### Phase 186: Operator-Contract Template
 **Goal**: A new operator-contract template variant exists as a standalone document, forked from the geometry contract template, covering operator surfaces rather than spatial layout, with a usage guide that distinguishes the two templates
@@ -119,7 +125,9 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. The operator-contract template file exists with its operator-surface section replacing the geometry-specific sections of the parent template, and all other sections are present and filled with operator-context guidance
   2. The usage guide explains when to reach for the operator-contract template versus the geometry contract template, with a concrete example distinguishing the two
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [ ] 183-01-PLAN.md — Write complete chip-well geometry contract (all 12 template sections)
 
 ### Phase 187: Golden-Test Corpus Plan
 **Goal**: The golden-test corpus plan defines a fixture dataset, a 30+ case test corpus covering isolation and combination scenarios, a Vitest-based test runner architecture, and an anti-patching policy — so that implementation can start TDD without design decisions outstanding
@@ -130,7 +138,9 @@ Plans:
   2. The test corpus contains at least 30 test cases with each category (Formulas, Marks, Audits) covered in isolation, in valid combinations with each other, and in edge cases (cycles, type mismatches, empty inputs)
   3. The test runner architecture document explains how the corpus extends the existing Vitest + realDb() infrastructure, including where test files live and how fixtures are loaded
   4. The anti-patching policy statement is consistent with the v6.1 rule: if a test fails, fix the spec or the implementation, never weaken the test assertion
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [ ] 183-01-PLAN.md — Write complete chip-well geometry contract (all 12 template sections)
 
 ### Phase 188: UX Interaction Spec
 **Goal**: The complete UX interaction spec covers live preview behavior, reversibility, error states, save-as-formula promotion flow, explorer placement in the ribbon, and all WKWebView constraints — so that the implementation milestone can begin UI work without open design questions
@@ -143,14 +153,16 @@ Plans:
   4. The save-as-formula promotion UI flow is specified step-by-step, including the dialog contents, required fields, and what happens on confirm vs cancel
   5. The explorer placement spec names the single "Formulas" parent in the Analyze ribbon section and its three sub-explorers, with the navigation hierarchy shown
   6. All WKWebView constraint compliance requirements are documented: pointer events for chip drag (no HTML5 DnD), no :has() behavioral selectors, <dialog> for all prompts
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [ ] 183-01-PLAN.md — Write complete chip-well geometry contract (all 12 template sections)
 
 ## Progress Table
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 182. Three-Explorer Boundary Spec | 1/1 | Complete    | 2026-04-27 |
-| 183. Chip-Well Geometry Contract | 0/TBD | Not started | - |
+| 183. Chip-Well Geometry Contract | 0/1 | Planned | - |
 | 184. Compilation Pipeline Spec | 0/TBD | Not started | - |
 | 185. Formula Card Schema | 0/TBD | Not started | - |
 | 186. Operator-Contract Template | 0/TBD | Not started | - |
