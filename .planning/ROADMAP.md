@@ -163,7 +163,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 182. Three-Explorer Boundary Spec | 1/1 | Complete    | 2026-04-27 |
 | 183. Chip-Well Geometry Contract | 1/1 | Complete    | 2026-04-27 |
-| 184. Compilation Pipeline Spec | 1/1 | Complete   | 2026-04-27 |
+| 184. Compilation Pipeline Spec | 1/1 | Complete    | 2026-04-27 |
 | 185. Formula Card Schema | 0/TBD | Not started | - |
 | 186. Operator-Contract Template | 0/TBD | Not started | - |
 | 187. Golden-Test Corpus Plan | 0/TBD | Not started | - |
