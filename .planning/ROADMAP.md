@@ -52,7 +52,7 @@ All phases 1-181 are archived in `.planning/milestones/` under their respective 
 ### v15.0 Formulas Explorer Architecture
 
 - [x] **Phase 182: Three-Explorer Boundary Spec** - Define the fundamental three-way split (Formulas/Marks/Audits) with type signatures, composition rules, and regression guards (completed 2026-04-27)
-- [ ] **Phase 183: Chip-Well Geometry Contract** - Specify the reusable spatial primitive for chip wells, drag states, and accessibility contract
+- [x] **Phase 183: Chip-Well Geometry Contract** - Specify the reusable spatial primitive for chip wells, drag states, and accessibility contract (completed 2026-04-27)
 - [ ] **Phase 184: Compilation Pipeline Spec** - Define the chip-arrangement-to-SQL compilation pipeline, dependency resolution, and annotation algorithms
 - [ ] **Phase 185: Formula Card Schema** - Define the SQLite DDL, versioning strategy, type-signature validation, and sync conflict resolution for formula_cards
 - [ ] **Phase 186: Operator-Contract Template** - Fork the geometry contract template into an operator-surface variant with usage guide
@@ -87,7 +87,7 @@ Plans:
   5. The composition seams section names the interfaces to WA-2 (compilation pipeline) and WA-3 (Formula Card library) by interface name only, with no concrete implementation references
 **Plans**: 1 plan
 Plans:
-- [ ] 183-01-PLAN.md — Write complete chip-well geometry contract (all 12 template sections)
+- [x] 183-01-PLAN.md — Write complete chip-well geometry contract (all 12 template sections)
 
 ### Phase 184: Compilation Pipeline Spec
 **Goal**: The complete algorithm from chip arrangement to executed SQL (including bind-value protocol, dependency resolution, and post-query annotation for Marks and Audits) is specified with worked examples and structural regression guards
@@ -162,7 +162,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 182. Three-Explorer Boundary Spec | 1/1 | Complete    | 2026-04-27 |
-| 183. Chip-Well Geometry Contract | 0/1 | Planned | - |
+| 183. Chip-Well Geometry Contract | 1/1 | Complete   | 2026-04-27 |
 | 184. Compilation Pipeline Spec | 0/TBD | Not started | - |
 | 185. Formula Card Schema | 0/TBD | Not started | - |
 | 186. Operator-Contract Template | 0/TBD | Not started | - |

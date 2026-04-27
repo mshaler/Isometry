@@ -53,12 +53,12 @@ Requirements for this architecture-only milestone. Each maps to roadmap phases. 
 
 ### Chip-Well Geometry Contract (WA-6)
 
-- [ ] **GEOM-01**: All 12 template sections filled including §3 "N/A — operator surface" with rationale
-- [ ] **GEOM-02**: Coordinate system: wells vertically stacked, chips flow horizontally with wrap, fixed-height variable-width tokens
-- [ ] **GEOM-03**: Drag states specified (default, drag-source-active, drag-target-valid/invalid, drop-rejected, promotion-prompt)
-- [ ] **GEOM-04**: Pointer-event-based drag with keyboard equivalents and ARIA accessibility contract
-- [ ] **GEOM-05**: §9 Composition names seams to WA-2 (compilation pipeline) and WA-3 (Formula Card library) by interface
-- [ ] **GEOM-06**: Contract is reusable — no Formulas-specific language; per-explorer specifics live in WA-1
+- [x] **GEOM-01**: All 12 template sections filled including §3 "N/A — operator surface" with rationale
+- [x] **GEOM-02**: Coordinate system: wells vertically stacked, chips flow horizontally with wrap, fixed-height variable-width tokens
+- [x] **GEOM-03**: Drag states specified (default, drag-source-active, drag-target-valid/invalid, drop-rejected, promotion-prompt)
+- [x] **GEOM-04**: Pointer-event-based drag with keyboard equivalents and ARIA accessibility contract
+- [x] **GEOM-05**: §9 Composition names seams to WA-2 (compilation pipeline) and WA-3 (Formula Card library) by interface
+- [x] **GEOM-06**: Contract is reusable — no Formulas-specific language; per-explorer specifics live in WA-1
 
 ### Operator-Contract Template (WA-7)
 
@@ -152,12 +152,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 | UXIN-04 | Phase 188 | Pending |
 | UXIN-05 | Phase 188 | Pending |
 | UXIN-06 | Phase 188 | Pending |
-| GEOM-01 | Phase 183 | Pending |
-| GEOM-02 | Phase 183 | Pending |
-| GEOM-03 | Phase 183 | Pending |
-| GEOM-04 | Phase 183 | Pending |
-| GEOM-05 | Phase 183 | Pending |
-| GEOM-06 | Phase 183 | Pending |
+| GEOM-01 | Phase 183 | Complete |
+| GEOM-02 | Phase 183 | Complete |
+| GEOM-03 | Phase 183 | Complete |
+| GEOM-04 | Phase 183 | Complete |
+| GEOM-05 | Phase 183 | Complete |
+| GEOM-06 | Phase 183 | Complete |
 | TMPL-01 | Phase 186 | Pending |
 | TMPL-02 | Phase 186 | Pending |
 | GARD-01 | Phase 182 | Complete |
