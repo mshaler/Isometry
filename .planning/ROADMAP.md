@@ -116,7 +116,7 @@ Plans:
   5. All three sync conflict scenarios (concurrent edit, delete-while-editing, type-signature change) have documented resolution strategies with explicit outcomes
 **Plans**: 1 plan
 Plans:
-- [ ] 183-01-PLAN.md — Write complete chip-well geometry contract (all 12 template sections)
+- [ ] 185-01-PLAN.md — Write formula card schema spec (DDL, type-signature validation, versioning, promotion API, sync conflict resolution)
 
 ### Phase 186: Operator-Contract Template
 **Goal**: A new operator-contract template variant exists as a standalone document, forked from the geometry contract template, covering operator surfaces rather than spatial layout, with a usage guide that distinguishes the two templates
@@ -127,7 +127,7 @@ Plans:
   2. The usage guide explains when to reach for the operator-contract template versus the geometry contract template, with a concrete example distinguishing the two
 **Plans**: 1 plan
 Plans:
-- [ ] 183-01-PLAN.md — Write complete chip-well geometry contract (all 12 template sections)
+- [ ] 185-01-PLAN.md — Write formula card schema spec (DDL, type-signature validation, versioning, promotion API, sync conflict resolution)
 
 ### Phase 187: Golden-Test Corpus Plan
 **Goal**: The golden-test corpus plan defines a fixture dataset, a 30+ case test corpus covering isolation and combination scenarios, a Vitest-based test runner architecture, and an anti-patching policy — so that implementation can start TDD without design decisions outstanding
@@ -140,7 +140,7 @@ Plans:
   4. The anti-patching policy statement is consistent with the v6.1 rule: if a test fails, fix the spec or the implementation, never weaken the test assertion
 **Plans**: 1 plan
 Plans:
-- [ ] 183-01-PLAN.md — Write complete chip-well geometry contract (all 12 template sections)
+- [ ] 185-01-PLAN.md — Write formula card schema spec (DDL, type-signature validation, versioning, promotion API, sync conflict resolution)
 
 ### Phase 188: UX Interaction Spec
 **Goal**: The complete UX interaction spec covers live preview behavior, reversibility, error states, save-as-formula promotion flow, explorer placement in the ribbon, and all WKWebView constraints — so that the implementation milestone can begin UI work without open design questions
@@ -155,7 +155,7 @@ Plans:
   6. All WKWebView constraint compliance requirements are documented: pointer events for chip drag (no HTML5 DnD), no :has() behavioral selectors, <dialog> for all prompts
 **Plans**: 1 plan
 Plans:
-- [ ] 183-01-PLAN.md — Write complete chip-well geometry contract (all 12 template sections)
+- [ ] 185-01-PLAN.md — Write formula card schema spec (DDL, type-signature validation, versioning, promotion API, sync conflict resolution)
 
 ## Progress Table
 
@@ -164,7 +164,7 @@ Plans:
 | 182. Three-Explorer Boundary Spec | 1/1 | Complete    | 2026-04-27 |
 | 183. Chip-Well Geometry Contract | 1/1 | Complete    | 2026-04-27 |
 | 184. Compilation Pipeline Spec | 1/1 | Complete    | 2026-04-27 |
-| 185. Formula Card Schema | 0/TBD | Not started | - |
+| 185. Formula Card Schema | 0/1 | Not started | - |
 | 186. Operator-Contract Template | 0/TBD | Not started | - |
 | 187. Golden-Test Corpus Plan | 0/TBD | Not started | - |
 | 188. UX Interaction Spec | 0/TBD | Not started | - |
