@@ -1,153 +1,16 @@
 # Stack Research
 
-**Domain:** SuperWidget Shell — tab management, sidecar transitions, rich status slots, session persistence
-**Researched:** 2026-04-21
-**Confidence:** HIGH
-
-## Summary Verdict
-
-No new runtime dependencies are needed. All required capabilities — tab management, drag-to-reorder, sidecar show/hide transitions, rich status slots, session persistence — are achievable with the existing stack (TypeScript 5.9, D3.js v7.9, CSS custom properties, StateManager + ui_state). The analysis below covers the specific patterns and integration points needed for each feature area.
+**Domain:** DSL compiler, dependency graph, chip-well geometry — Formulas Explorer Architecture (v15.0)
+**Researched:** 2026-04-27
+**Confidence:** HIGH (all new capabilities verified against codebase inspection and npm registry; no new runtime deps required)
 
 ---
 
-## Existing Stack (Validated — Do Not Re-Research)
+## Context
 
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| TypeScript | 5.9.3 (strict) | All logic |
-| D3.js | 7.9.0 | DOM management, data joins |
-| sql.js | 1.14.0 (FTS5 WASM) | System of record |
-| Vite | 7.3.1 | Build |
-| Vitest | 4.0.18 | Tests |
-| Biome | 2.4.6 | Lint |
-| Playwright | 1.58.2 | E2E |
-| StateManager | — | Tier 2 ui_state persistence |
-| DOMPurify | 3.3.2 | XSS sanitization (notebook) |
-| marked | 17.0.4 | Markdown (notebook) |
+This milestone is a *clarification milestone* — no code ships. But the architecture specs it produces (WA-1 through WA-6) will directly drive two downstream implementation milestones: the DSL compiler and the chip-well UI. This document answers: when those milestones begin, what are the zero-surprise technology choices?
 
----
-
-## Feature Area: Tab Management UX
-
-### Pattern: Pure DOM tab bar with event delegation
-
-The current SuperWidget tabs slot (`[data-slot="tabs"]`) already renders placeholder buttons with `data-tab-role="tab"` and `data-tab-active="true"`. The Projection state machine (`enabledTabIds`, `activeTabId`) already tracks tab state. What is missing is the wiring layer that makes tab clicks invoke `commitProjection(switchTab(...))`.
-
-**Recommended approach:** Event-delegated click handler on `_tabsEl` in SuperWidget, mirroring the identical pattern used in `ExplorerCanvas.ts` (tab bar delegation via `.closest('[data-tab-id]')`). No library needed.
-
-**Tab create/close:** Add/remove tabs by calling `toggleTabEnabled()` (already implemented in `projection.ts`). Render a close button as a child `<button>` inside each tab `<button>` — intercept click before delegation fires via `e.stopPropagation()`. This matches browser tab bar convention; the inner button carries `aria-label="Close tab"` to satisfy the nested interactive element ARIA requirement.
-
-**ARIA pattern:** `role="tablist"` on `[data-slot="tabs"]`, `role="tab"` on each button, `aria-selected` mirrors `data-tab-active`, `aria-controls` points to the canvas slot id. Keyboard: ArrowLeft/ArrowRight cycle tabs (roving tabindex pattern — already validated in CommandBar and ViewTabBar at v6.1). Delete key on focused tab triggers close. Matches W3C APG Tabs pattern.
-
-**Confidence:** HIGH — pattern is the exact pattern already validated in ExplorerCanvas and DockNav.
-
----
-
-## Feature Area: Tab Drag-to-Reorder
-
-### Pattern: Pointer events with setPointerCapture — no library
-
-The codebase made a binding architectural decision at v7.2: all drag surfaces use pointer events (not HTML5 DnD) because WKWebView intercepts HTML5 `dragstart`. This must be honored here.
-
-The SuperGrid axis grip reorder (same-dimension reorder via `pointerdown/pointermove/pointerup` in v7.2) is the reference implementation. Tab reorder is simpler — it is 1D horizontal, not 2D.
-
-**Recommended approach:**
-1. `pointerdown` on tab: record `startIndex`, call `el.setPointerCapture(e.pointerId)` to pin the pointer to the element during fast movement.
-2. `pointermove`: compute drag offset, derive `targetIndex` from tab midpoints via `getBoundingClientRect()` on sibling tabs. Apply a CSS `translate3d` ghost offset to the dragged tab.
-3. `pointerup`/`pointercancel`: call `reorderTab(fromIndex, toIndex)` — a new pure function analogous to `reorderColAxes` in PAFVProvider. Dispatch to update Projection `enabledTabIds` order and re-commit.
-4. Visual feedback: `data-drag-active` attribute on dragging tab (CSS dims it with `opacity: 0.5`), insertion line `::after` pseudo-element on drop target (already validated in SuperGrid axis DnD at v7.2).
-
-**Do NOT use:** `sortablejs`, `@dnd-kit/core`, `react-beautiful-dnd` — all are React-scoped or add a runtime dependency that violates the zero-framework constraint.
-
-**Confidence:** HIGH — identical pointer-events pattern is already validated for SuperGrid axis reorder. Key Decision D-017: "Pointer events only for DnD" is binding.
-
----
-
-## Feature Area: Explorer Sidecar Show/Hide Transitions
-
-### Pattern: CSS `grid-template-columns` interpolation — no JS animation
-
-The SuperWidget root is already a CSS Grid (`grid-template-rows: auto auto 1fr auto`). The sidecar explorer needs to animate in/out alongside the main canvas. The correct approach is to add a sidecar column and animate `grid-template-columns` between `0px` and the sidecar width.
-
-**Recommended CSS pattern:**
-```css
-[data-component="superwidget"] {
-  grid-template-columns: 1fr var(--sw-sidecar-width, 0px);
-  transition: grid-template-columns 200ms ease-out;
-}
-
-[data-component="superwidget"][data-sidecar-visible="true"] {
-  --sw-sidecar-width: 280px;
-}
-```
-
-Header, tabs, and status rows remain full-width via `grid-column: 1 / -1`. The sidecar slot sits in column 2 of the canvas row only. No JavaScript animation, no WAAPI, no `requestAnimationFrame` loop.
-
-**Browser support:** Chrome 107+, Firefox 66+, Safari 16+. All well above the iOS 17 / macOS 14 deployment target. HIGH confidence.
-
-**`transition-behavior: allow-discrete` is NOT needed here.** `grid-template-columns` is an interpolatable numeric property, not a discrete one. `allow-discrete` is only needed for `display: none` toggles; adding it here introduces unnecessary complexity.
-
-**Overflow guard:** The sidecar container must have `overflow: hidden` so content does not bleed through the `0px` column during the transition. Add `clip-path: inset(0)` as a safety belt on the sidecar element.
-
-**Multiple sidecars:** VIEW_SIDECAR_MAP in ViewCanvas.ts currently maps only `supergrid → explorer-1`. For v13.3, stay with a single sidecar column. If multiple explorers are needed later, stack them as tabs within the sidecar slot rather than adding more grid columns.
-
-**Confidence:** HIGH — grid transition is Baseline (widely available), integrates naturally into the existing `--sw-*` token system, no new dependencies.
-
----
-
-## Feature Area: Rich Status Slots
-
-### Pattern: Canvas-driven status rendering — extend existing statusSlot.ts
-
-The existing `statusSlot.ts` (Phase 169) and `ViewCanvas._updateStatus()` (Phase 171) establish the canonical pattern: each canvas type owns its status DOM and writes to `[data-stat="..."]` spans. The status slot is a dumb container; canvases inject typed content.
-
-**Recommended status content per canvas type:**
-
-| Canvas Type | Status Content | Data Source |
-|-------------|---------------|-------------|
-| View (all 9 views) | `{View Name} · {N} cards` | `ViewManager.getLastCards().length` — already wired |
-| View (filter active) | `{N} cards · {M} filters active` | `FilterProvider.getActiveFilterCount()` — add getter |
-| View (selection active) | `{N} selected` appended as extra span | `SelectionProvider` — Tier 3, never persist |
-| Editor (card open) | `{Card title} · Editing` | EditorCanvas current card state |
-| Editor (unsaved) | `{Card title} · Unsaved changes` | shadow-buffer dirty flag |
-| Explorer | `{N} datasets · Last import: {relative time}` | existing `updateStatusSlot()` in statusSlot.ts |
-
-**Implementation pattern:** Each CanvasComponent calls a `_refreshStatus(statusEl)` private method that is triggered (a) on mount, (b) on `onProjectionChange`, and (c) on provider subscription callbacks. For ViewCanvas the `ViewManager.onViewSwitch` callback already triggers `_updateStatus`; extend it with a `FilterProvider.subscribe()` call for filter count updates.
-
-**Do NOT use:** IntersectionObserver, MutationObserver, or polling for status updates. Use the existing event-driven subscription pattern (`provider.subscribe()` → callback → DOM update) already validated throughout the codebase.
-
-**Confidence:** HIGH — pattern extends existing working code in ViewCanvas.ts and statusSlot.ts with no new API surface.
-
----
-
-## Feature Area: Tab and Shell Session Persistence
-
-### Pattern: StateManager Tier 2 via ui_state — existing infrastructure
-
-Tabs are UI-configuration state (not data or selection), so they belong in Tier 2. The existing StateManager with `registerProvider()` + `enableAutoPersist()` + `restore()` already handles all Tier 2 persistence.
-
-**Recommended persistence shape:**
-```typescript
-// ui_state key: 'superwidget:tabs'
-interface TabSessionState {
-  zones: {
-    [zoneRole: string]: {
-      enabledTabIds: string[];
-      activeTabId: string;
-      canvasType: string;
-      canvasId: string;
-    };
-  };
-}
-```
-
-**Integration:** Create a `SuperWidgetStateProvider` class implementing `PersistableProvider` (`getState() / setState() / resetState()`). Register with StateManager under key `'superwidget:tabs'` before calling `sm.restore()`. Auto-persist fires via `markDirty()` on every `commitProjection()` call.
-
-**Migration guard:** Apply the same `_migrateState()` pattern from v5.3 — if a stored `canvasId` is not found in the current registry, fall back to the default Projection. This handles stale persisted state cleanly.
-
-**Scoped vs global:** Tab state is NOT dataset-scoped (unlike PAFVProvider which uses Phase 130 `_scopedKeys`). Register without `scopeToDataset()`. Tabs persist globally across dataset switches.
-
-**Confidence:** HIGH — StateManager + ui_state is the established, tested persistence layer. No alternative is appropriate.
+The existing stack is locked (TypeScript 5.9.3 strict, sql.js 1.14.0, D3.js v7.9, Vite 7.3, Vitest 4.0, Biome 2.4.6). This document covers only new capabilities required by the Formulas Explorer architecture.
 
 ---
 
@@ -157,18 +20,278 @@ interface TabSessionState {
 
 | Technology | Version | Purpose | Why |
 |------------|---------|---------|-----|
-| TypeScript (strict) | 5.9.3 | All implementation | Locked |
-| CSS custom properties | — | Sidecar transition, tab tokens | `--sw-*` namespace already established |
-| Pointer Events API | — | Tab drag-to-reorder | D-017: no HTML5 DnD anywhere |
-| StateManager + ui_state | — | Tab session persistence | Tier 2 canonical store |
+| TypeScript | 5.9.3 (strict) | All new modules | Locked |
+| sql.js | 1.14.0 (FTS5 WASM) | `formula_cards` table, golden corpus tests | Same WASM instance; no schema migration library needed |
+| Vitest | 4.0.18 | Golden test corpus (`it.each()`) | `it.each()` + `realDb()` factory from v6.1 is the right foundation |
+| Biome | 2.4.6 | Lint gate | Unchanged |
 
-### Supporting Libraries (Already Present)
+### New Dependencies
 
-| Library | Version | How It Applies to v13.3 |
-|---------|---------|------------------------|
-| D3.js | 7.9.0 | DOM management for status slot data joins (if any) |
-| StateManager | — | `registerProvider('superwidget:tabs', ...)` |
-| WorkerBridge | — | `ui:getAll` / `ui:set` messages for persistence |
+**None.** All three new capabilities (DSL parsing, dependency graph, type validation) are implementable with zero new npm packages. Rationale per capability below.
+
+---
+
+## Capability Analysis
+
+### Capability 1: DSL Parser — Hand-Written Recursive Descent
+
+**Verdict: write it, do not import a library.**
+
+The Formulas DSL grammar is structurally simple:
+- **Filters:** `<field> <op> <literal>` composed AND-only across chips (no cross-chip OR, no nesting)
+- **Sorts:** `<field> ASC|DESC` per chip, composed lexicographically
+- **Calculations:** `<expression>` with column references and SQL function calls; dependency annotations reference other chip IDs
+
+This grammar is decidable with 1-token lookahead and has no left recursion. A recursive descent parser fits in ~250 LOC. The existing `FilterProvider.compile()` and `allowlist.ts` already implement the validating, parameterizing half of this pipeline; the DSL parser is the *input* side of that same pipeline.
+
+**Why not Chevrotain (~60KB parser library, ~5K stars):**
+Chevrotain is the right choice when a grammar has ambiguity, multi-token error recovery needs, or a visitor pattern requirement. The Formulas DSL has none of these. Adding ~60KB for a grammar that needs 1-token lookahead is not justified. The codebase already has precedent for hand-writing this layer — `QueryBuilder.ts` assembles SQL from typed provider fragments with zero library dependency.
+
+**Why not nearley / PEG.js:**
+Both require a separate grammar file compilation step (grammar source → generated JS), which conflicts with the zero-extra-tooling constraint enforced since v4.2.
+
+**Why not `expr-eval` or `mathjs`:**
+General-purpose expression evaluators accept arbitrary user input and produce numeric values. They have no concept of the allowlist boundary in `allowlist.ts`. Plugging one in would bypass `validateFilterField()` / `validateOperator()`, violating FE-RG-02.
+
+**Integration seam with existing code:**
+
+The DSL parser produces typed AST nodes. The compiler walks those nodes and emits `{ sql: string, params: unknown[] }` — the existing `CompiledQuery` shape from `QueryBuilder.ts`. No new boundary types are needed. Field and operator validation flows through the existing `validateFilterField()` / `validateOperator()` assertion functions in `allowlist.ts`. SQL injection is structurally impossible because the compiler never concatenates user input into SQL strings (FE-RG-02).
+
+**Token vocabulary sufficient for the DSL:**
+
+```typescript
+type Token =
+  | { kind: 'IDENT';    value: string }
+  | { kind: 'STRING';   value: string }
+  | { kind: 'NUMBER';   value: number }
+  | { kind: 'OP';       value: 'eq' | 'neq' | 'gt' | 'gte' | 'lt' | 'lte' | 'contains' | 'startsWith' | 'in' | 'isNull' | 'isNotNull' }
+  | { kind: 'KEYWORD';  value: 'ASC' | 'DESC' | 'AND' | 'NOT' | 'NULL' }
+  | { kind: 'EOF' }
+```
+
+**Confidence: HIGH.** Hand-written recursive descent is the production choice for domain-specific grammars at this scale. Reference: Microsoft Power Query parser (TypeScript, hand-written RD), Ruff Python parser (hand-written RD at v0.4.0), Sigma Computing formula layer.
+
+---
+
+### Capability 2: Dependency Graph — Inline Kahn's Algorithm
+
+**Verdict: write it (~30 LOC), do not import a library.**
+
+The dependency graph for Calculation chips is bounded: a realistic session has 5–20 formula chips. The graph is a DAG or cycles are a compile-time error (FE-RG-05). Kahn's algorithm is O(V + E) and produces cycle detection for free — if `order.length < nodes.length` after the algorithm, the residual nodes are in a cycle.
+
+**Why not `toposort` npm (2.0.2, ~4.9M weekly downloads, MIT):**
+- Requires a separate `@types/toposort` devDependency — dual-package friction for 30 lines.
+- Input format is array-of-pairs `[from, to][]` which requires adapting chip descriptor objects anyway.
+- The package was last published in 2016 with no active maintenance.
+- The codebase adds algorithmic library dependencies only when the algorithm itself is complex (graphology for Louvain / betweenness centrality at v9.0). A topological sort does not clear that bar.
+
+**Why not `@n1ru4l/toposort` (TypeScript-native, modern Map/Set):**
+Better package hygiene but same conclusion: 30 lines of Kahn's algorithm inline has no version drift risk, no transitive deps, and is directly testable in the golden corpus.
+
+**Kahn's algorithm implementation pattern (inline in `src/formulas/graph.ts`):**
+
+```typescript
+/** Returns ordered chip IDs, or the cycle participants if a cycle exists. */
+function topoSort(
+  nodes: string[],
+  edges: ReadonlyArray<[from: string, to: string]>
+): { order: string[] } | { cycle: string[] } {
+  const inDegree = new Map<string, number>(nodes.map(n => [n, 0]));
+  const adj = new Map<string, string[]>(nodes.map(n => [n, []]));
+  for (const [from, to] of edges) {
+    adj.get(from)!.push(to);
+    inDegree.set(to, (inDegree.get(to) ?? 0) + 1);
+  }
+  const queue = nodes.filter(n => inDegree.get(n) === 0);
+  const order: string[] = [];
+  while (queue.length) {
+    const n = queue.shift()!;
+    order.push(n);
+    for (const m of adj.get(n)!) {
+      const deg = inDegree.get(m)! - 1;
+      inDegree.set(m, deg);
+      if (deg === 0) queue.push(m);
+    }
+  }
+  if (order.length < nodes.length) {
+    const inOrder = new Set(order);
+    return { cycle: nodes.filter(n => !inOrder.has(n)) };
+  }
+  return { order };
+}
+```
+
+Cycle participants are returned by ID so the chip-well UI can highlight them (WA-5/WA-6 error state for dependency cycles).
+
+**Confidence: HIGH.** Standard algorithm; zero version drift risk; ~5 test cases cover all branches.
+
+---
+
+### Capability 3: Type Signature Validation — Extend Existing Allowlist Pattern
+
+**Verdict: no new library. Extend `allowlist.ts` with a `TYPE_COMPATIBILITY` record.**
+
+Formula Card type signatures (`text | number | date | boolean | select | multi_select`) map directly to the `facet_type` values already tracked by `SchemaProvider`. Type validation at chip-drop time is a compatibility lookup: "does this chip's output type match this well's accepted input types?"
+
+This is the same frozen-set + assertion pattern already in `allowlist.ts`. A new `validateChipType()` assertion follows `validateFilterField()` identically.
+
+**Type compatibility table pattern:**
+
+```typescript
+// src/formulas/type-compat.ts
+type ChipOutputType = 'boolean' | 'number' | 'text' | 'date' | 'select' | 'multi_select';
+type ChipWellKind   = 'filter' | 'sort' | 'calculation' | 'mark' | 'audit';
+
+const TYPE_COMPATIBILITY: Readonly<Record<ChipOutputType, ChipWellKind[]>> = {
+  boolean:      ['filter', 'mark', 'audit'],   // predicates work in all three
+  number:       ['calculation', 'sort'],
+  text:         ['calculation', 'filter', 'sort'],
+  date:         ['calculation', 'filter', 'sort'],
+  select:       ['filter'],
+  multi_select: ['filter'],
+} as const;
+
+export function isCompatibleWithWell(
+  chipOutputType: ChipOutputType,
+  well: ChipWellKind
+): boolean {
+  return TYPE_COMPATIBILITY[chipOutputType]?.includes(well) ?? false;
+}
+
+/** Assertion variant — throws with a UI-surfaceable message */
+export function assertCompatibleWithWell(
+  chipOutputType: ChipOutputType,
+  well: ChipWellKind,
+  chipLabel: string
+): void {
+  if (!isCompatibleWithWell(chipOutputType, well)) {
+    throw new TypeError(
+      `Type mismatch: chip "${chipLabel}" (output: ${chipOutputType}) ` +
+      `is not compatible with well "${well}".`
+    );
+  }
+}
+```
+
+**Integration with SchemaProvider:** `SchemaProvider.getAllAxisColumns()` already returns columns with `latchFamily` and SQLite type affinity. The type validator reads from the same source — no new PRAGMA queries needed. The `(string & {})` widening trick from v5.3 covers dynamic schema fields at compile time.
+
+**Confidence: HIGH.** Directly extends the existing validated allowlist pattern; no additional library surface.
+
+---
+
+### Capability 4: Golden Test Corpus — Extend Existing Vitest Infrastructure
+
+**Verdict: `it.each()` with typed fixture objects. No new library.**
+
+Vitest 4.0 `it.each()` over a typed array is the idiomatic approach for a golden corpus. The existing `realDb()` factory (v6.1), `makeProviders()` wired stack, and `tests/seams/` directory structure are the right foundation.
+
+**Corpus test pattern:**
+
+```typescript
+// tests/seams/formulas/golden-corpus.test.ts
+interface GoldenCase {
+  name: string;
+  chips: ChipDescriptor[];
+  expectedSql: string;
+  expectedParams: unknown[];
+}
+
+const CORPUS: GoldenCase[] = [
+  {
+    name: 'simple eq filter',
+    chips: [{ well: 'filter', field: 'status', op: 'eq', value: 'active' }],
+    expectedSql: 'deleted_at IS NULL AND status = ?',
+    expectedParams: ['active'],
+  },
+  // ...30+ cases
+];
+
+it.each(CORPUS)('$name', ({ chips, expectedSql, expectedParams }) => {
+  const { sql, params } = compileChips(chips);
+  expect(sql).toBe(expectedSql);
+  expect(params).toEqual(expectedParams);
+});
+```
+
+Anti-patching rule from v6.1 applies verbatim (FE-RG-12): corpus assertions are immutable. Bug fixes add cases; they never weaken existing assertions. The `tests/seams/formulas/` subdirectory mirrors the production module boundary `src/formulas/`.
+
+**Confidence: HIGH.** Pattern already validated in `tests/seams/` (v6.1) and `tests/plugins/` (v8.3).
+
+---
+
+### Capability 5: Chip-Well DnD — Extend Existing Pointer-Event Infrastructure
+
+**Verdict: no new library. Reuse pointer-event DnD pattern from ProjectionExplorer (v7.2).**
+
+The ProjectionExplorer's chip drag was migrated to pointer events in v7.2 specifically because HTML5 DnD is unreliable in WKWebView (D-017: "Pointer events only for DnD"). The chip-well geometry contract (WA-6) will specify the coordinate system and hit-region rules; the implementation reuses `pointerdown/pointermove/pointerup` with `elementsFromPoint()` hit-testing.
+
+**Existing utilities to reuse:**
+- Module-level `dragPayload` singleton pattern — HTML5 DnD `dataTransfer.getData()` is blocked during `dragover`; pointer-event DnD uses module-level state (validated v3.0)
+- 40px enlarged drop zones during active drag (v7.2 decision)
+- FLIP animation via WAAPI for chip reorder within a well (v3.1 decision)
+- `data-drag-active` attribute + CSS `opacity: 0.5` ghost (v7.2 pattern)
+
+**Confidence: HIGH.** Identical constraints, identical solution, validated twice (ProjectionExplorer v7.2, SuperGrid axis grip v7.2).
+
+---
+
+### Capability 6: Formula Card Schema — New SQLite Table, No Libraries
+
+**Verdict: DDL-only change. No ORM, no migration library.**
+
+The `formula_cards` table follows the pattern of `cards`, `connections`, and `ui_state` — created at `initialize()` time via `_applySchema()` in `Database.ts`. Schema additions are additive (no breaking changes to existing tables).
+
+**Versioning strategy:** every save inserts a new row with incremented `version` integer. Reads `SELECT ... WHERE id = ? ORDER BY version DESC LIMIT 1` for the latest. Old versions remain for rollback. No separate `formula_card_versions` table at v1 — version column + latest-first query is sufficient.
+
+**Dependencies column:** `TEXT` column storing `JSON.stringify(string[])` — array of formula card IDs. The topological sort algorithm deserializes this at compile time. No graph storage library needed.
+
+**Sync:** Formula cards sync via CKSyncEngine like `cards` and `connections`. The existing `export-all-cards` bridge message is extended to include formula cards, matching the v4.1 pattern for connections.
+
+**Confidence: HIGH.** Matches existing `ui_state` (JSON blobs in TEXT columns) and `connections` (explicit reference tracking) patterns exactly.
+
+---
+
+## What NOT to Add
+
+| Avoid | Why | Use Instead |
+|-------|-----|-------------|
+| Chevrotain | ~60KB bundle for a grammar with 1-token lookahead; library power exceeds grammar complexity | Hand-written recursive descent (~250 LOC) |
+| nearley / PEG.js | Grammar file compilation step; conflicts with zero-extra-tooling constraint | Hand-written recursive descent |
+| `toposort` (npm 2.0.2) | 30-line Kahn's algorithm does not clear the "add a dependency" bar; `@types/toposort` dual-package friction | Inline Kahn's algorithm in `src/formulas/graph.ts` |
+| `@n1ru4l/toposort` | Same conclusion as above — better package, still 30 lines inline wins | Inline Kahn's algorithm |
+| HyperFormula | Permanently out-of-scope (PROJECT.md) — ~500KB bundle, PAFV coordinate reference syntax unsolved | SQL DSL compiled by hand |
+| `expr-eval` / `mathjs` | General-purpose evaluators bypass the allowlist safety boundary; user input skips `validateFilterField()` | Hand-written parser feeding existing allowlist |
+| Zod / io-ts | Runtime schema validation library for a lookup table that is a frozen `Record<>` | Extend `allowlist.ts` with `TYPE_COMPATIBILITY` record |
+| HTML5 DnD for chip wells | WKWebView intercepts `dragstart`; architecturally banned (D-017) | Pointer events + `elementsFromPoint()` hit-testing |
+| Separate `formula_card_versions` table | Over-engineering for v1 — version integer + ORDER BY DESC LIMIT 1 covers the use case | Version column on `formula_cards` table |
+
+---
+
+## Integration Points with Existing Infrastructure
+
+| New Capability | Existing Seam | Existing Code Location |
+|---|---|---|
+| DSL parser output `{ sql, params }` | `CompiledQuery` interface | `src/providers/QueryBuilder.ts` |
+| Chip field validation | `validateFilterField()` / `isValidFilterField()` | `src/providers/allowlist.ts` |
+| Chip operator validation | `validateOperator()` / `isValidOperator()` | `src/providers/allowlist.ts` |
+| Dynamic column names for chips | `SchemaProvider.getAllAxisColumns()` | `src/providers/SchemaProvider.ts` |
+| Post-query annotation (Marks, Audits) | `CellDatum` augmentation after Worker response | `src/views/pivot/PivotTypes.ts` |
+| Formula card CRUD | `Database._applySchema()`, `ui_state` key pattern | `src/database/Database.ts` |
+| CloudKit sync for formula cards | `CKSyncEngine` actor, `export-all-cards` message | Swift `SyncMerger.ts`, `NativeBridge.ts` |
+| Golden test corpus | `realDb()`, `makeProviders()`, `tests/seams/` | `tests/harness/`, `tests/seams/` |
+| Chip-well DnD | `dragPayload` singleton, `elementsFromPoint()` | `src/views/pivot/plugins/` DnD utilities |
+
+---
+
+## Worker Bridge Protocol Implications
+
+The Formulas compiler runs on the **main thread**, not in the Worker. Rationale:
+
+- Compilation is synchronous and CPU-cheap (parsing a handful of chip descriptors is <1ms)
+- The compiled `{ sql, params }` tuple is sent to the Worker via the existing `supergrid:query` or `db:exec` message types — no new message type needed for the compiler itself
+- Post-query annotations (Marks class assignment, Audits flag assignment) execute on the **main thread** after the Worker returns results — same pattern as `AuditState` CSS overlay (v4.1 decision: "AuditState as CSS overlay — no Worker re-query needed")
+
+Formula card CRUD operations (save, load, delete) use a new `formula_cards:*` Worker message family, following the `cards.handler.ts` pattern. This is the only new Worker protocol surface.
 
 ---
 
@@ -180,91 +303,44 @@ interface TabSessionState {
 
 ---
 
-## What NOT to Add
-
-| Avoid | Why | Use Instead |
-|-------|-----|-------------|
-| `sortablejs` / `@dnd-kit/core` / `react-beautiful-dnd` | React-scoped or runtime framework dependency; violates zero-framework constraint | Pointer events with `setPointerCapture` (D-017, validated v7.2) |
-| GSAP / Framer Motion / Anime.js | Animation library runtime; overkill for a CSS grid column transition | `grid-template-columns` CSS transition (Baseline, Chrome 107+) |
-| `transition-behavior: allow-discrete` | Only needed for `display: none` discrete toggles; `grid-template-columns` is interpolatable | Plain CSS `transition: grid-template-columns 200ms ease-out` |
-| CSS View Transitions API (`document.startViewTransition`) | Cross-document SPA transitions; Safari 18+ only (deployment target is iOS 17+) | CSS grid column transition |
-| `localStorage` for tab state | Second, unsynchronized persistence layer; bypasses ui_state checkpoint flow | StateManager + ui_state via WorkerBridge |
-| MutationObserver / polling for status updates | Anti-pattern in this codebase | Provider `subscribe()` callbacks (established pattern) |
-| `@floating-ui/dom` / Popper.js | Not needed for tab bar or status bar | `title` attribute for tooltips (established convention) |
-| React / Vue / Svelte components | Zero framework dependency is a locked architectural constraint | Pure TypeScript + D3/DOM |
-
----
-
-## Integration Points with Existing Architecture
-
-### SuperWidget.ts changes needed
-
-1. Wire `_tabsEl` click delegation to call `switchTab()` + re-commit projection. Add a `setCommitCallback(fn)` so the owning shell connects its state management — keeps SuperWidget as a dumb renderer.
-2. Grid layout update: expand from single-column to `grid-template-columns: 1fr var(--sw-sidecar-width, 0px)` with CSS transition. Sidecar column spans canvas row only; header/tabs/status remain `grid-column: 1 / -1`.
-3. Add `data-sidecar-visible` attribute toggling — set by ViewCanvas via `onSidecarChange` callback (already exists in ViewCanvasConfig).
-
-### StateCoordinator integration for status updates
-
-Status slot updates for filter count require subscribing to FilterProvider changes. Use the existing `coordinator.subscribe()` pattern — do NOT add a new observer mechanism. The subscriber pattern is: `filter.subscribe(() => this._refreshStatus(this._statusEl))` inside ViewCanvas.mount().
-
-### WorkbenchShell retirement
-
-When SuperWidget becomes the primary container, WorkbenchShell's flex-column layout is retired. DockNav (v11.0) and inline explorer embedding (v11.1) live in the outer app shell, not inside SuperWidget's grid. SuperWidget is a zone primitive; the outer shell wraps DockNav + SuperWidget side-by-side.
-
----
-
-## New CSS Tokens Needed
-
-Extend the `--sw-*` namespace in `superwidget.css`:
-
-| Token | Value | Purpose |
-|-------|-------|---------|
-| `--sw-sidecar-width` | `280px` | Sidecar expanded width |
-| `--sw-sidecar-transition` | `grid-template-columns 200ms ease-out` | Matches `--transition-fast` timing convention |
-| `--sw-tab-close-size` | `14px` | Close button target within tab pill |
-
----
-
 ## Alternatives Considered
 
-| Recommendation | Alternative | Why Not |
-|----------------|-------------|---------|
-| CSS `grid-template-columns` transition for sidecar | CSS `max-width: 0` / `width: 0` on sidecar container | Grid approach is cleaner because sidecar is a true grid column; width tricks require additional `overflow: hidden` gymnastics and misfire in flex contexts |
-| Pointer events for tab reorder | HTML5 DnD API | WKWebView intercepts `dragstart` (validated problem, fixed in v7.2); HTML5 DnD is architecturally banned (Key Decision D-017) |
-| StateManager + ui_state for tab persistence | `localStorage` | localStorage creates a second unsynchronized persistence layer; ui_state is the canonical Tier 2 store flowing through WorkerBridge checkpoint |
-| Inline close button inside tab pill | Right-click context menu to close | Inline close is discoverable, touch-friendly, and matches browser tab bar convention; context menu requires additional menu infrastructure |
-| Single sidecar column (tabbed content inside) | Multiple sidecar grid columns | Simpler for v13.3; VIEW_SIDECAR_MAP currently maps one explorer per view type |
+| Recommended | Alternative | When to Use Alternative |
+|-------------|-------------|-------------------------|
+| Hand-written recursive descent parser | Chevrotain | When grammar has genuine ambiguity, multi-token error recovery, or CST visitor requirements — none apply here |
+| Inline Kahn's algorithm | `toposort` npm | In a new project with no established codebase conventions; not appropriate here given the 30-line cost |
+| `TYPE_COMPATIBILITY` record in `allowlist.ts` | Zod schema validation | When validating external API payloads or user-uploaded JSON where shape is unknown — not applicable to an internal chip descriptor type |
+| `formula_cards` version column + ORDER BY DESC | Separate versions table | When audit trail queries must be performant across thousands of cards — not the scale of a formula card library |
 
 ---
 
 ## Version Compatibility
 
-All patterns are achievable with the locked dependency set. No version upgrades needed.
+All new capabilities are implemented in-process with zero new npm packages. No version compatibility surface to manage.
 
-| Capability | Browser Requirement | Deployment Target | Status |
-|-----------|--------------------|--------------------|--------|
-| `grid-template-columns` transition | Chrome 107+, Safari 16+, Firefox 66+ | iOS 17+ / macOS 14+ (Safari 17+) | SAFE |
-| Pointer events + `setPointerCapture` | Chrome 55+, Safari 13+, Firefox 59+ | iOS 17+ / macOS 14+ | SAFE |
-| CSS custom properties (`--sw-*`) | Chrome 49+, Safari 9.1+, Firefox 31+ | iOS 17+ / macOS 14+ | SAFE |
-| WAAPI (for FLIP animations, already in use) | Chrome 36+, Safari 13.1+, Firefox 48+ | iOS 17+ / macOS 14+ | SAFE |
+| Capability | Constraint | Status |
+|---|---|---|
+| `it.each()` golden corpus | Vitest 4.0 stable API | SAFE |
+| Kahn's algorithm | ES2020 Map/Set (sql.js WASM environment requirement) | SAFE |
+| `TYPE_COMPATIBILITY` frozen record | TypeScript 5.9 `as const` | SAFE |
+| `formula_cards` DDL | sql.js 1.14.0 custom WASM | SAFE — additive schema, no migration |
+| Pointer events + `elementsFromPoint()` | Safari 13.1+, Chrome 55+, Firefox 59+ | SAFE — iOS 17+ / macOS 14+ deployment target |
 
 ---
 
 ## Sources
 
-- `src/superwidget/SuperWidget.ts` — current four-slot CSS Grid layout and placeholder tab rendering (HIGH confidence, direct analysis)
-- `src/superwidget/projection.ts` — Projection state machine, switchTab/toggleTabEnabled/validateProjection (HIGH confidence, direct analysis)
-- `src/superwidget/ExplorerCanvas.ts` — event-delegation tab click pattern, reference implementation (HIGH confidence, direct analysis)
-- `src/superwidget/ViewCanvas.ts` — status slot update pattern, onSidecarChange callback (HIGH confidence, direct analysis)
-- `src/superwidget/statusSlot.ts` — existing status rendering primitives (HIGH confidence, direct analysis)
-- `src/styles/superwidget.css` — current `--sw-*` token namespace and grid layout (HIGH confidence, direct analysis)
-- `src/providers/StateManager.ts` — Tier 2 persistence via ui_state (HIGH confidence, direct analysis)
-- `PROJECT.md` Key Decisions — D-017 (Pointer events only), D-005 (three-tier persistence), v7.2 validated patterns (HIGH confidence)
-- [CSS animated grid layouts — web.dev](https://web.dev/articles/css-animated-grid-layouts) — `grid-template-columns` transition, browser support (Chrome 107+, Safari 16+, Firefox 66+) (MEDIUM confidence, official source)
-- [transition-behavior: allow-discrete — modern-css.com](https://modern-css.com/animating-display-none-without-workarounds/) — discrete property transitions; confirmed NOT needed for grid column interpolation (MEDIUM confidence)
-- [W3C WAI-ARIA APG Tabs Pattern](https://www.w3.org/WAI/ARIA/apg/patterns/tabs/) — tablist/tab/tabpanel ARIA structure, ArrowLeft/Right keyboard navigation (HIGH confidence, authoritative spec)
-- [Smooth Drag Interactions with Pointer Events — DEV Community](https://dev.to/nishinoshake/smooth-drag-interactions-with-pointer-events-5e2j) — setPointerCapture pattern for drag-to-reorder (MEDIUM confidence, corroborates existing D-017 decision)
+- Codebase inspection: `src/providers/QueryBuilder.ts`, `src/providers/allowlist.ts`, `src/providers/FilterProvider.ts`, `src/providers/SchemaProvider.ts`, `package.json` — HIGH confidence (direct read)
+- `.planning/formulas-explorer-handoff-v2.md` — architecture decisions and regression guards FE-RG-01 through FE-RG-14 — HIGH confidence (primary spec)
+- `PROJECT.md` — locked decisions D-017 (pointer events), HyperFormula permanent out-of-scope, SQL DSL pattern (v5.2), graphology addition criteria (v9.0) — HIGH confidence
+- [npm: toposort 2.0.2](https://www.npmjs.com/package/toposort) — verified ~4.9M weekly downloads, `@types/toposort` separate package, 2016 vintage, array-of-pairs input format — MEDIUM confidence (npm registry)
+- [npm: @n1ru4l/toposort](https://www.npmjs.com/package/@n1ru4l/toposort) — TypeScript-native port, modern Map/Set — MEDIUM confidence (npm registry)
+- [Topological sort + cycle detection: Kahn's algorithm](https://labuladong.online/en/algo/data-structure/topological-sort/) — O(V+E) correctness, cycle detection via residual node count — HIGH confidence (algorithmic reference)
+- [Ruff v0.4.0: hand-written recursive descent](https://astral.sh/blog/ruff-v0.4.0) — production evidence for hand-written RD parser at domain-grammar scale — MEDIUM confidence (official blog)
+- [WebSearch: Chevrotain performance benchmark](https://chevrotain.io/performance/) — confirmed ~60KB footprint for parser library — MEDIUM confidence (official Chevrotain site)
+- [TypeScript 5.5 type predicate inference](https://effectivetypescript.com/2024/04/16/inferring-a-type-predicate/) — confirmed `is` predicate pattern + inference in 5.5; relevant to type-compat validation pattern — MEDIUM confidence
 
 ---
-*Stack research for: v13.3 SuperWidget Shell*
-*Researched: 2026-04-21*
+
+*Stack research for: Isometry v15.0 Formulas Explorer Architecture*
+*Researched: 2026-04-27*

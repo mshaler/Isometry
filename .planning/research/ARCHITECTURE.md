@@ -1,448 +1,362 @@
-# Architecture Research
+# Architecture Patterns: v15.0 Formulas Explorer Integration
 
-**Domain:** SuperWidget Shell Integration — v13.3
-**Researched:** 2026-04-21
-**Confidence:** HIGH (sourced entirely from production codebase — no external research required)
+**Domain:** Three-explorer architecture (Formulas, Marks, Audits) with DSL-to-SQL compilation pipeline
+**Researched:** 2026-04-27
+**Confidence:** HIGH — based on reading the existing codebase and handoff document directly
 
-## Standard Architecture
+---
 
-### System Overview: Current State (v13.2)
+## Recommended Architecture
 
-```
-document.getElementById('app') [#app, role="main"]
-  WorkbenchShell (.workbench-shell)
-    CommandBar (.workbench-commandbar)  [full width, wordmark]
-    .workbench-body (flex-row)
-      .workbench-sidebar
-        DockNav (48px icon strip, verb-noun taxonomy)
-      .workbench-main
-        .workbench-main__content (flex-col)
-          .workbench-slot-top
-            .slot-top__data-explorer
-              SuperWidget [data-component="superwidget"]  <-- CURRENT LOCATION
-                [data-slot="header"]  "Zone" label
-                [data-slot="tabs"]    placeholder 3 buttons
-                [data-slot="canvas"]  ExplorerCanvas (active)
-                [data-slot="status"]  DB stats (cards, connections, last import)
-            .slot-top__properties-explorer  (PanelManager managed)
-            .slot-top__projection-explorer  (PanelManager managed)
-          .workbench-view-content
-            VisualExplorer
-              ViewManager → IView (9 views)
-          .workbench-slot-bottom
-            .slot-bottom__latch-filters    (PanelManager managed)
-            .slot-bottom__formulas-explorer (PanelManager managed)
-document.body overlays: HelpOverlay, CommandPalette, toasts, AppDialog
-```
+### How the new explorers sit in the existing system
 
-### SuperWidget Internal Structure (v13.2)
+The three new explorers are **operator surfaces**, not PAFV views. They produce typed configuration that existing views consume. The existing architecture already has a slot for exactly this kind of component:
 
 ```
-SuperWidget [data-component="superwidget"]  (CSS Grid, 4 rows: auto / auto / 1fr / auto)
-  [data-slot="header"]   zone label text — static "Zone" string
-  [data-slot="tabs"]     placeholder buttons (Tab 1/2/3 + config gear)
-  [data-slot="canvas"]   CanvasComponent mount point
-    ExplorerCanvas (canvasId: explorer-1)
-      tab-bar (import-export / catalog / db-utilities)
-      3 tab containers (DataExplorerPanel sections)
-    ViewCanvas (canvasId: view-1) — registered, not yet primary
-      ViewManager → IView (9 views)
-    EditorCanvas (canvasId: editor-1) — registered, not yet primary
-      NotebookExplorer
-  [data-slot="status"]   statusSlot (DB stats: card count · connections · last import)
+┌─────────────────────────────────────────────────────────┐
+│  DockNav (Analyze section → "Formulas" dock item)       │
+│  Already wired in DOCK_DEFS / section-defs.ts           │
+└────────────────────────┬────────────────────────────────┘
+                         │ toggles bottom slot
+                         ▼
+┌─────────────────────────────────────────────────────────┐
+│  FormulasExplorerPanel (replaces FormulasPanelStub)      │
+│  PanelRegistry slot 'formulas', bottom-slot              │
+│                                                          │
+│  ┌─────────────┐ ┌────────────┐ ┌──────────────┐        │
+│  │ Formulas    │ │ Marks      │ │ Audits       │        │
+│  │ Sub-explorer│ │ Sub-explorer│ │ Sub-explorer │        │
+│  └──────┬──────┘ └─────┬──────┘ └──────┬───────┘        │
+│         │              │               │                 │
+│    [chip wells]   [chip wells]   [chip wells]            │
+│    (ChipWell      (ChipWell      (ChipWell               │
+│     geometry       geometry       geometry               │
+│     primitive)     primitive)     primitive)             │
+└─────────┼──────────────┼───────────────┼─────────────────┘
+          │              │               │
+          ▼              ▼               ▼
+┌──────────────────────────────────────────────────────────┐
+│  FormulasProvider  MarksProvider  AuditsProvider         │
+│  (new providers: compile() + subscribe() + persistence)  │
+└──────────────────┬───────────────────────────────────────┘
+                   │ registers with StateCoordinator (no changes)
+                   ▼
+┌──────────────────────────────────────────────────────────┐
+│  StateCoordinator → rAF-batched supergrid:query trigger  │
+└──────────────────────────────────────────────────────────┘
+                   │
+                   ▼
+┌──────────────────────────────────────────────────────────┐
+│  QueryBuilder (extended: injects FormulasProvider output)│
+│  SELECT / WHERE / ORDER BY composed with existing        │
+│  FilterProvider + PAFVProvider + DensityProvider output  │
+└──────────────────────────────────────────────────────────┘
+                   │
+                   ▼
+┌──────────────────────────────────────────────────────────┐
+│  WorkerBridge → supergrid:query handler (unchanged)      │
+└──────────────────────────────────────────────────────────┘
+          │
+          ▼ (post-query)
+┌──────────────────────────────────────────────────────────┐
+│  ViewManager calls:                                      │
+│  MarksProvider.annotate(rows) → CSS class assignments    │
+│  AuditsProvider.annotate(rows) → flag annotations        │
+│  (same pattern as existing AuditState CSS overlay)       │
+└──────────────────────────────────────────────────────────┘
 ```
 
-### Target Architecture: v13.3
+---
 
-```
-document.getElementById('app') [#app, role="main"]
-  SuperWidget [data-component="superwidget"]  <-- TOP-LEVEL CONTAINER
-    [data-slot="header"]
-      CommandBar content (wordmark, dataset name, menu actions)
-    [data-slot="tabs"]
-      TabBar (ARIA tablist: Explorer | View | Editor tabs)
-      create-tab button, close-tab, reorder, persist
-    [data-slot="canvas"]
-      .sw-canvas-layout (flex-row)
-        .sw-canvas-layout__sidebar
-          DockNav (48px icon strip)
-          .workbench-slot-top (inline explorer containers)
-          .workbench-slot-bottom (inline filter containers)
-        .sw-canvas-layout__main
-          active CanvasComponent (Explorer / View / Editor)
-    [data-slot="status"]
-      contextual per canvas type:
-        ExplorerCanvas → DB stats (card count, connections, last import)
-        ViewCanvas     → view name + card count (+ filter summary)
-        EditorCanvas   → selected card title
-document.body overlays: HelpOverlay, CommandPalette, toasts, AppDialog
-```
-
-## Component Responsibilities
-
-| Component | Current Responsibility | v13.3 Change |
-|-----------|----------------------|--------------|
-| `WorkbenchShell` | Top-level DOM orchestrator — CommandBar, DockNav sidebar, top/bottom slots, view-content | **Retired.** SuperWidget becomes top-level. |
-| `SuperWidget` | 4-slot CSS Grid container; commitProjection drives canvas lifecycle | **Promoted to top-level.** Owns full app area. |
-| `[data-slot="header"]` | Zone label text (static "Zone" string) | Hosts CommandBar content — wordmark, dataset name, menu actions. |
-| `[data-slot="tabs"]` | Placeholder 3 static buttons | Real ARIA tablist: create, close, reorder tabs; persisted via StateManager. |
-| `[data-slot="canvas"]` | CanvasComponent mount point (ExplorerCanvas today) | Flex-row wrapper holding sidebar (DockNav + slots) + main canvas content. |
-| `[data-slot="status"]` | statusSlot DB stats (card count, connections, last import) | Rich contextual status per canvas type — each canvas owns its status structure. |
-| `Projection` | Immutable value object: canvasType, canvasId, activeTabId, enabledTabIds, zoneRole, canvasBinding | **Not extended for shell tabs** (see Anti-Pattern 2). Shell tabs are a separate TabManager concern. |
-| `ExplorerCanvas` | DataExplorerPanel with internal 3-tab bar | Unchanged internally. Status slot cleared on mount (Anti-Pattern 3 fix). |
-| `ViewCanvas` | ViewManager + 9 views + `onSidecarChange` stub | `onSidecarChange` wired to real `panelManager.show/hide('projection')` in main.ts. |
-| `EditorCanvas` | NotebookExplorer + SelectionProvider-driven status | Unchanged. Status slot cleared on mount. |
-| `DockNav` | Mounts into `WorkbenchShell.getSidebarEl()` | **Re-parents** into `.sw-canvas-layout__sidebar` inside canvas slot. |
-| `PanelManager` | Manages inline top/bottom slot visibility | **Re-wired** to new slot containers inside `.sw-canvas-layout__sidebar`. |
-| `StateManager` | Tier 2 persistence to ui_state table | **New keys:** `tabs:active`, `tabs:list` for tab persistence. |
-| `statusSlot.ts` | `renderStatusSlot` / `updateStatusSlot` for DB stats | ExplorerCanvas calls these explicitly after clearing; not called from main.ts post-mount. |
-
-## Architectural Patterns
-
-### Pattern 1: Incremental Shell Replacement (Recommended)
-
-**What:** SuperWidget absorbs WorkbenchShell responsibilities in 3 phases. WorkbenchShell stays functional until the final cutover phase.
-
-**When to use:** main.ts has ~1,986 lines with ~40 distinct wiring points to `shell.*` API surfaces. Any one of them silently untouched during a big-bang swap = runtime failure with no compile error.
-
-**Trade-offs:**
-- Pro: Each phase ships independently and is testable in isolation
-- Pro: 245+ superwidget tests and 3 E2E specs remain green through the transition
-- Con: Short period of dual-shell references in main.ts during Phase 2
-
-**Migration path:**
-
-```
-Phase A — Canvas system complete (SHIPPED v13.2)
-  SuperWidget in top-slot above ViewManager
-  ExplorerCanvas / ViewCanvas / EditorCanvas all production
-
-Phase B — Tab management (v13.3 Phase 1)
-  Placeholder tabs slot → real ARIA TabBar
-  Shell-level tab switches via setCanvas() Projection transitions
-  Tab state persisted via StateManager (tabs:active key)
-  WorkbenchShell unchanged
-
-Phase C — Shell hoisting (v13.3 Phase 2)
-  SuperWidget mounts on #app (not inside WorkbenchShell)
-  Canvas slot gets .sw-canvas-layout flex-row wrapper
-  DockNav re-parents into .sw-canvas-layout__sidebar
-  Inline slot containers recreated inside sidebar
-  CommandBar migrates to header slot
-  ViewManager re-rooted to main content div
-  WorkbenchShell.destroy() called
-  main.ts: all shell.get*() → direct container refs
-
-Phase D — Sidecar polish + rich status (v13.3 Phase 3)
-  onSidecarChange wired: ViewCanvas → panelManager.show/hide('projection')
-  Auto-show/hide transitions (CSS opacity + max-height)
-  Status slot cleared on canvas switch
-  ViewCanvas status: add filter summary (active filter count)
-  ExplorerCanvas calls renderStatusSlot after clearing status slot
-```
-
-### Pattern 2: Shell Tabs as Separate Concern from Projection Tabs
-
-**What:** There are two distinct "tab" concepts in the system. Conflating them breaks existing tests.
-
-**ExplorerCanvas-internal tabs** (existing):
-- `enabledTabIds`: `['import-export', 'catalog', 'db-utilities']`
-- `activeTabId`: drives `switchTab()` Projection transition
-- Rendered by ExplorerCanvas's own tab bar
-- `onProjectionChange()` shows/hides tab containers
-
-**Shell-level canvas tabs** (new in v13.3):
-- Which canvas is active: Explorer | View | Editor
-- Drives `setCanvas(canvasId, canvasType)` Projection transition
-- Rendered by TabBar in `[data-slot="tabs"]`
-- Tab list stored in `TabMetadata[]` array in TabManager scope
-- Persisted as `tabs:active` and `tabs:list` in ui_state
-
-**Rule:** Shell-level tab switching = `setCanvas()`. ExplorerCanvas tab switching = `switchTab()`. Never mix.
-
-**Example of correct shell tab implementation:**
-
-```typescript
-// TabBar fires this when user clicks a shell tab
-onTabSelect(tab: TabMetadata): void {
-  const newProj = setCanvas(currentProjection, tab.canvasId, tab.canvasType);
-  superWidget.commitProjection(newProj);
-  // StateManager persistence
-  void bridge.send('ui:set', { key: 'tabs:active', value: tab.canvasId });
-}
-```
-
-### Pattern 3: Canvas Slot Flex-Row Wrapper
-
-**What:** The canvas slot must hold both the DockNav sidebar and the main canvas content side by side. SuperWidget's CSS Grid gives the canvas slot `1fr` of height. The content inside that slot must use flex-row to split horizontal space.
-
-**Implementation:**
-
-```typescript
-// In SuperWidget or SuperWidgetShell, after mounting:
-const canvasLayout = document.createElement('div');
-canvasLayout.className = 'sw-canvas-layout';  // display: flex; flex-direction: row
-
-const sidebar = document.createElement('div');
-sidebar.className = 'sw-canvas-layout__sidebar';
-
-const main = document.createElement('div');
-main.className = 'sw-canvas-layout__main';  // flex: 1 1 auto; min-width: 0
-
-canvasLayout.appendChild(sidebar);
-canvasLayout.appendChild(main);
-this._canvasEl.appendChild(canvasLayout);
-```
-
-The DockNav, top-slot, and bottom-slot containers mount into `sidebar`. The active CanvasComponent mounts into `main` (via `commitProjection`).
-
-**Important:** `this._canvasEl` in SuperWidget currently receives the CanvasComponent directly via `canvas.mount(this._canvasEl)`. For v13.3, `canvas.mount(mainDiv)` instead — SuperWidget passes `mainDiv` not `this._canvasEl` to the canvas factory.
-
-This means the DOM traversal in ViewCanvas and EditorCanvas that finds status slot via `container.parentElement?.querySelector('[data-slot="status"]')` still works — `container` is `mainDiv`, `mainDiv.parentElement` is `canvasLayout`, `canvasLayout.parentElement` is `this._canvasEl`, and `this._canvasEl.parentElement` is `this._root` which contains the status slot. One extra parent hop.
-
-**Fix:** Update traversal to `container.closest('[data-component="superwidget"]')?.querySelector('[data-slot="status"]')` — more robust than counting `.parentElement` hops.
-
-### Pattern 4: Status Slot Ownership by Active Canvas
-
-**What:** Each canvas clears the status slot on `mount()` and writes its own status DOM structure.
-
-**Why needed:** Currently `renderStatusSlot()` is called from main.ts at line 1656 (after ExplorerCanvas mounts). ViewCanvas and EditorCanvas each have their own `_updateStatus()` methods that create `.sw-view-status-bar` and `.sw-editor-status-bar` respectively. These accumulate in the DOM across canvas switches.
-
-**Correct approach:**
-
-```typescript
-// In SuperWidget.commitProjection, before mounting new canvas:
-if (!prev || prev.canvasType !== proj.canvasType || prev.canvasId !== proj.canvasId) {
-  this._statusEl.textContent = '';  // clear stale status DOM
-}
-```
-
-Each canvas then renders its own status on mount. `renderStatusSlot()` is called by ExplorerCanvas in its `mount()`. `ViewCanvas._updateStatus()` and `EditorCanvas._updateStatus()` fire post-mount as they do today.
-
-## Data Flow
-
-### Tab Switch Flow (Shell-Level, v13.3)
-
-```
-User clicks shell tab in [data-slot="tabs"] TabBar
-    |
-TabBar.onTabSelect(tab: TabMetadata)
-    |
-setCanvas(currentProjection, tab.canvasId, tab.canvasType) → newProjection
-    |
-superWidget.commitProjection(newProjection)
-    |-- [canvasId changed]
-    |   statusEl.textContent = ''  (clear stale DOM)
-    |   currentCanvas.destroy()
-    |   newCanvas = canvasFactory(newProjection.canvasId, newProjection.canvasBinding)
-    |   newCanvas.mount(mainDiv)
-    |   currentCanvas = newCanvas
-    |
-    |-- [only activeTabId changed - ExplorerCanvas internal tab]
-        currentCanvas.onProjectionChange(newProjection)
-    |
-bridge.send('ui:set', { key: 'tabs:active', value: newProjection.canvasId })
-(persisted to ui_state via Worker Bridge)
-```
-
-### Explorer Sidecar Flow (v13.3 Target)
-
-```
-ViewCanvas._notifySidecar(viewType)
-    |
-this._config.onSidecarChange(explorerId | null)
-    |    [currently console.debug → must become:]
-    |
-if (explorerId === 'explorer-1')
-    panelManager.show('projection')
-else
-    panelManager.hide('projection')
-    |
-PanelManager.show/hide → projectionChildEl.style.display toggled
-    |
-syncTopSlotVisibility() → topSlotEl always block (SuperWidget always visible)
-```
-
-### Status Slot Update Flow (Per Canvas Type)
-
-```
-ExplorerCanvas mounts
-  → statusEl.textContent = ''
-  → renderStatusSlot(statusEl)  [creates .sw-status-bar]
-  → refreshDataExplorer() calls updateStatusSlot(statusEl, stats) periodically
-
-ViewCanvas mounts
-  → statusEl.textContent = ''
-  → ViewManager.onViewSwitch fires → _updateStatus(viewType)  [creates .sw-view-status-bar]
-  → shows view name + card count
-
-EditorCanvas mounts
-  → statusEl.textContent = ''
-  → SelectionProvider.subscribe → _updateStatus()  [creates .sw-editor-status-bar]
-  → shows selected card title (async bridge card:get)
-```
-
-## New vs Modified Components
+## Component Boundaries
 
 ### New Components
 
-| Component | File | Purpose |
-|-----------|------|---------|
-| `TabBar` | `src/superwidget/TabBar.ts` | Interactive ARIA tablist with create/close/reorder; replaces placeholder tab buttons in SuperWidget constructor |
-| `TabManager` | `src/superwidget/TabManager.ts` | Tab list state: add, remove, reorder, boot restore from StateManager; keeps tab metadata separate from Projection |
+| Component | Responsibility | Communicates With |
+|-----------|---------------|-------------------|
+| `FormulasProvider` | Owns chip arrangement state for Calculations/Filters/Sorts; compiles to `(sql, bindValues)` tuple pairs for SELECT/WHERE/ORDER BY injection | StateCoordinator (subscribe), QueryBuilder (compile()), StateManager (persist) |
+| `MarksProvider` | Owns conditional encoding chip state; compiles predicates to `{predicate, cssClass}[]` pairs for post-query annotation | StateCoordinator (subscribe), ViewManager post-query (annotate()), StateManager (persist) |
+| `AuditsProvider` | Owns anomaly/validation rule chip state; compiles predicates to `{predicate, flagType}[]` pairs for post-query annotation | StateCoordinator (subscribe), ViewManager post-query (annotate()), StateManager (persist) |
+| `DslCompiler` | Pure function: chip arrangement → `{sql_text, bind_values[]}` tuple. Never concatenates user input into SQL strings. Validates field names against SchemaProvider allowlist | FormulasProvider, MarksProvider, AuditsProvider |
+| `FormulasExplorerPanel` | Tab container hosting three sub-explorer UIs; implements PanelHook (mount/destroy); replaces `FormulasPanelStub` | PanelRegistry (PanelHook interface), FormulasProvider, MarksProvider, AuditsProvider |
+| `ChipWell` | Geometry primitive: spatial layout for draggable chip tokens in typed category wells. Pointer-event DnD only (WKWebView constraint). Reusable across all three sub-explorers. | Sub-explorer UIs, DslCompiler (output consumer) |
+| `formula_cards` SQL table | Persisted named formula cards: id, title, dsl, sql, version, scope, type_signature, dependencies, provenance, performance_hint, visibility | CloudKit sync (checkpoint), DslCompiler (load), ChipWell (drag source), Worker CRUD handlers |
 
-### Modified Components
+### Existing Components — Extended (not replaced)
 
-| Component | File | Change |
-|-----------|------|--------|
-| `SuperWidget` | `src/superwidget/SuperWidget.ts` | (1) Clear status slot on canvas type/id change in commitProjection; (2) Pass `mainDiv` (not `canvasEl`) to `canvas.mount()`; (3) Inject TabBar into tabs slot instead of placeholder buttons |
-| `ViewCanvas` | `src/superwidget/ViewCanvas.ts` | Update status slot DOM traversal to use `container.closest('[data-component="superwidget"]')` instead of counting parentElement hops |
-| `EditorCanvas` | `src/superwidget/EditorCanvas.ts` | Same DOM traversal fix as ViewCanvas |
-| `main.ts` | `src/main.ts` | (Phase 1) Wire shell tab switches to setCanvas(); (Phase 2) Mount SuperWidget on #app, re-parent DockNav, migrate CommandBar to header slot, wire sidecar callback; (Phase 3) Pass tab list to TabManager |
+| Component | Current Behavior | Required Extension |
+|-----------|-----------------|-----------------|
+| `QueryBuilder` | Composes `FilterProvider + PAFVProvider + DensityProvider` compile() outputs | Add `FormulasProvider.compile()` injection: `selectFragments` go into SELECT clause; `whereFragments` + bind values go into WHERE with AND composition alongside FilterProvider; `orderFragments` go into ORDER BY. QueryBuilder is the **only** assembly point — no SQL is assembled elsewhere. |
+| `WorkerRequestType` (protocol.ts) | Union of 35 message types | Add `'formula:card:create'`, `'formula:card:list'`, `'formula:card:update'`, `'formula:card:delete'` for formula card CRUD with typed request/response shapes. Optionally add `'formula:compile-check'` for async type-signature validation. Formula Card CRUD can alternatively reuse `'db:exec'`/`'db:query'` — only add typed messages if structured responses are needed. |
+| `StateCoordinator` | Subscribes to providers, fires rAF-batched notification | Register `FormulasProvider`, `MarksProvider`, `AuditsProvider` via `registerProvider(key, provider)`. Zero changes to StateCoordinator implementation. |
+| `StateManager` | Tier 2 persistence via `ui_state` table | Register FormulasProvider for chip arrangement persistence. Formula Cards persist to dedicated `formula_cards` table, not `ui_state`. |
+| `PanelRegistry` | Plugin-based panel lifecycle | `formulasPanelFactory` in `FormulasPanelStub.ts` is replaced with one pointing at the real `FormulasExplorerPanel`. No registry API changes. |
+| `supergrid:query` Worker handler | Executes parameterized GROUP BY query | Receives enriched `{ sql, params }` from QueryBuilder. The handler itself is unchanged — it already accepts arbitrary SQL+params. The enrichment comes from QueryBuilder composition, not from handler changes. |
+| `ViewManager` | Fetches data, calls IView.render() | After `supergrid:query` response arrives: call `MarksProvider.annotate(rows)` and `AuditsProvider.annotate(rows)`, then pass class/flag maps to the view for D3 data join application. This is the same post-render pattern as existing `AuditState` CSS overlay. |
 
-## Integration Points
+### Existing Components — Unchanged
 
-### WorkbenchShell API Migration Map
+| Component | Why Unchanged |
+|-----------|--------------|
+| `FilterProvider` | Formulas filter chips compile to the same SQL shape as FilterProvider filters but are a **separate provider**. FilterProvider owns LATCH-surface filters (histogram scrubbers, category chips, checkboxes). FormulasProvider owns user-authored DSL predicates. They coexist via AND composition in QueryBuilder. |
+| `PAFVProvider` | GROUP BY ownership never transfers to FormulasProvider (FE-RG-01). FormulasProvider may inject SELECT fragments (aggregations, window functions) but never owns `GROUP BY`. |
+| `SchemaProvider` | DslCompiler reads `SchemaProvider.getAllAxisColumns()` to validate field names and type signatures at chip-drop time. No SchemaProvider changes required. |
+| `WorkerBridge` | Typed message protocol with correlation IDs is unchanged. New message types extend the WorkerRequestType union only. |
+| `MutationManager` | Formula Card CRUD goes through Worker directly. MutationManager is not extended. |
+| `AliasProvider` | Derived column names from Calculations may participate in aliases, but AliasProvider needs no changes. It already handles dynamic column names. |
+| `DockNav` / `section-defs.ts` | The `DOCK_DEFS` array already has `{ key: 'formula', label: 'Formulas' }` in the Analyze section. The dock button already toggles the bottom slot panel. No navigation changes needed. |
+| `SuperWidget` / `PanelManager` | Panel slot wiring already exists. `FormulasPanelStub` already occupies the bottom-slot panel position. Replacing the stub with the real panel requires only changing the `formulasPanelFactory` function. |
 
-| WorkbenchShell Method | Current Call Site | v13.3 Replacement |
-|-----------------------|------------------|-------------------|
-| `getCommandBar()` | `shell.getCommandBar().setSubtitle(name)` | CommandBar instance in header slot; direct ref `commandBar.setSubtitle(name)` |
-| `getViewContentEl()` | ViewManager mount, crossfade opacity, shortcut closures | `mainDiv` inside canvas layout; `visualExplorer.mount(mainDiv)` |
-| `getSidebarEl()` | `dockNav.mount(shell.getSidebarEl())` | `dockNav.mount(sidebarDiv)` where `sidebarDiv` is `.sw-canvas-layout__sidebar` |
-| `getTopSlotEl()` | Slot child div creation for explorers | New `topSlotEl` inside `sidebarDiv` |
-| `getBottomSlotEl()` | Slot child div creation for filters | New `bottomSlotEl` inside `sidebarDiv` |
-| `getPanelRegistry()` | PanelManager construction | Unchanged — PanelRegistry stays; PanelManager gets new container refs |
-| `getSectionStates()` | LayoutPresetManager | No-op stub already; remains no-op |
-| `restoreSectionStates()` | LayoutPresetManager, createPresetCommands | No-op stub already; same |
-| `destroy()` | — | Called once in Phase 2 after SuperWidget is live |
+---
 
-### Sidecar Wiring Gap (Current TODO)
+## Data Flow
 
-`ViewCanvas.ts` line 1616-1619 in main.ts:
-```typescript
-onSidecarChange: (explorerId) => {
-  // TODO Phase 172+: wire sidecar visibility to ExplorerCanvas panel
-  console.debug('[ViewCanvas] sidecar:', explorerId);
-},
+### Formula chip → SQL → result set
+
+```
+User drops chip in ChipWell (pointer events)
+    │
+ChipWell.onChipDrop({ well, chip })
+    │
+FormulasProvider.addChip(well, chip)  [validates type via SchemaProvider]
+    │
+FormulasProvider._scheduleNotify()    [queueMicrotask, same as FilterProvider]
+    │
+StateCoordinator fires after microtask drain
+    │
+WorkerBridge.send('supergrid:query', QueryBuilder.build())
+    │  QueryBuilder now calls FormulasProvider.compile() alongside
+    │  FilterProvider.compile() + PAFVProvider.compile()
+    │
+Worker executes parameterized SQL (bind values, never string concat)
+    │
+supergrid:query response: CellDatum[]
+    │
+ViewManager receives rows
+    │
+MarksProvider.annotate(rows)  → {cardId, cssClasses[]}[]
+AuditsProvider.annotate(rows) → {cardId, flagType}[]
+    │
+D3 data join applies classes and flags to cells
+(same mechanism as SuperAudit plugin CSS overlay in v8.1)
 ```
 
-This must become:
-```typescript
-onSidecarChange: (explorerId) => {
-  if (explorerId) {
-    panelManager?.show('projection');
-    dockNav.setItemPressed('visualize:supergrid', true);  // optional UX signal
-  } else {
-    panelManager?.hide('projection');
-  }
-},
+### Formula Card promotion (bottom-up)
+
+```
+User clicks "Save as Formula" on a chip well
+    │
+FormulasExplorerPanel.onSaveAsFormula(well)
+    │
+DslCompiler.serializeChips(well.chips) → {dsl, sql, typeSignature}
+    │
+Worker.send('formula:card:create', { title, dsl, sql, typeSignature, ... })
+    │
+Worker inserts into formula_cards table
+    │
+FormulasExplorerPanel refreshes card library panel
 ```
 
-`panelManager` is forward-declared as `let panelManager: PanelManager | null = null` and assigned after panel registrations. The closure captures the variable reference so this is safe (same pattern as other closures in main.ts).
+---
 
-### Status Slot Conflict Resolution
+## Patterns to Follow
 
-The conflict exists at two levels:
+### Pattern 1: Provider compile() interface
 
-1. **main.ts level:** `renderStatusSlot(superWidget.statusEl)` called at line 1656 after ExplorerCanvas mounts. In v13.3, this call moves into `ExplorerCanvas.mount()` after `statusEl.textContent = ''`.
+Every existing provider exposes a synchronous pure `compile()` method. `FormulasProvider` follows the identical contract. `QueryBuilder` accepts it by extending the constructor signature.
 
-2. **SuperWidget level:** `commitProjection` adds a single clear: `if (canvasChanged) this._statusEl.textContent = ''`. This is the load-bearing fix — it ensures canvas switches always start with a clean status slate.
+```typescript
+interface CompiledFormulas {
+  selectFragments: string[];   // ["revenue - cost AS profit", "SUM(quantity)"]
+  whereFragments: string[];    // ["priority > ?", "status = ?"]
+  orderFragments: string[];    // ["company ASC", "created_at DESC"]
+  params: unknown[];           // bind values in order
+}
 
-## Suggested Build Order
+class FormulasProvider implements PersistableProvider {
+  compile(): CompiledFormulas { /* pure, sync */ }
+  subscribe(cb: () => void): () => void { /* returns unsubscribe */ }
+  getState(): unknown { /* StateManager Tier 2 */ }
+  setState(state: unknown): void { /* boot restore */ }
+}
+```
 
-### Phase 1: Tab Management (no shell changes)
+### Pattern 2: DslCompiler produces tuples — never concatenates
 
-**Prerequisite:** None — SuperWidget still in top-slot above ViewManager.
+DslCompiler is a pure function. Every code path that produces SQL must return `{ sql: string, params: unknown[] }`. String concatenation of user input into SQL text is a structural bug, not a style choice. Field names are allowlist-validated via `validateFilterField` (same gate as FilterProvider).
 
-**Build sequence:**
-1. `TabBar` class with ARIA tablist, create/close/reorder, `onTabSelect(tabId)` callback
-2. `TabManager` with add/remove/reorder logic, StateManager persistence (`tabs:active` key)
-3. `SuperWidget` constructor: replace placeholder tab buttons with injected `TabBar`
-4. `main.ts` wiring: shell-level tab clicks → `setCanvas()` → `commitProjection()`
-5. Boot restore: `bridge.send('ui:get', { key: 'tabs:active' })` before `initialProjection` construction
+```typescript
+// Correct: parameterized
+function compileFilterChip(chip: FilterChip): { sql: string; params: unknown[] } {
+  const safeField = validateFilterField(chip.field); // throws on unknown field
+  return { sql: `${safeField} > ?`, params: [chip.value] };
+}
 
-**Test requirements:** TabBar unit tests, TabManager persistence round-trip, SuperWidget commitProjection with real canvas switching by tabId, Playwright E2E verifying tab switch activates correct canvas.
+// Never: string concatenation of user value
+function compileFilterChip(chip: FilterChip): string {
+  return `${chip.field} > ${chip.value}`; // SQL injection
+}
+```
 
-### Phase 2: Shell Hoisting
+### Pattern 3: Post-query annotation for Marks and Audits
 
-**Prerequisite:** Phase 1 complete.
+Marks and Audits never alter row membership or order. They annotate rows after the SQL query returns. This is identical to the existing `AuditState` CSS overlay from v4.1/v8.1.
 
-**Build sequence:**
-1. `.sw-canvas-layout` CSS + flex-row wrapper creation in SuperWidget or new `SuperWidgetShell`
-2. SuperWidget `commitProjection`: pass `mainDiv` (not `canvasEl`) to `canvas.mount()`; clear status on canvas change
-3. `main.ts` Phase 2 changes:
-   - Move SuperWidget mount from `dataExplorerChildEl` to `container` (#app)
-   - `dockNav.mount(sidebarDiv)` instead of `shell.getSidebarEl()`
-   - Recreate `topSlotEl` and `bottomSlotEl` inside `sidebarDiv`
-   - `visualExplorer.mount(mainDiv)` instead of `shell.getViewContentEl()`
-   - CommandBar mount moves to `superWidget.headerEl`
-   - `WorkbenchShell` instantiation removed; `shell.destroy()` called if shell was created
-4. Update ViewCanvas and EditorCanvas DOM traversal to `closest('[data-component="superwidget"]')`
-5. Remove `WorkbenchShell` import from main.ts
+```typescript
+// MarksProvider.annotate() — pure JS predicate evaluation, no Worker involvement
+interface MarkAnnotation {
+  cardId: string;
+  cssClasses: string[]; // ["urgent", "flagged"]
+}
 
-**Test requirements:** All 245+ superwidget tests pass. Playwright WebKit E2E all 6 directional transitions. DockNav seam tests with new container. PanelManager seam tests with new containers.
+// Called in ViewManager after supergrid:query response:
+const marks = marksProvider.annotate(rows);      // O(n) JS predicate scan
+const audits = auditsProvider.annotate(rows);    // O(n) JS predicate scan
 
-### Phase 3: Sidecar Polish + Rich Status
+// Applied via D3 data join (same pattern as AuditPlugin.afterRender):
+cells.classed('urgent', d => marks.get(d.cardId)?.includes('urgent') ?? false);
+```
 
-**Prerequisite:** Phase 2 complete.
+### Pattern 4: PanelHook for FormulasExplorerPanel
 
-**Build sequence:**
-1. Wire `onSidecarChange` callback in main.ts: replace `console.debug` with `panelManager?.show/hide('projection')`
-2. CSS transitions for sidecar: `opacity` + `max-height` on `.slot-top__projection-explorer`
-3. Status slot clear in `commitProjection` (the single fix for Anti-Pattern 3)
-4. `ExplorerCanvas.mount()`: clear status slot, then call `renderStatusSlot()`
-5. `ViewCanvas._updateStatus()`: add filter summary span (active filter count via `filter.hasActiveFilters()`)
-6. `renderStatusSlot` call removed from main.ts (now handled by ExplorerCanvas)
+`FormulasExplorerPanel` implements `PanelHook` (mount/update/destroy). This is identical to how `CalcExplorer`, `NotebookExplorer`, `AlgorithmExplorer` work. The three sub-explorer UIs are created inside `mount()` and torn down in `destroy()`.
 
-**Test requirements:** Sidecar seam test (ViewCanvas → onSidecarChange → panelManager), status slot content verified per canvas type, CSS transition smoke in Playwright.
+```typescript
+export const formulasPanelFactory: PanelFactory = (): PanelHook => {
+  let panel: FormulasExplorerPanel | null = null;
+  return {
+    mount(container: HTMLElement): void {
+      panel = new FormulasExplorerPanel(container, {
+        formulasProvider, marksProvider, auditsProvider
+      });
+    },
+    update(): void { panel?.render(); },
+    destroy(): void { panel?.destroy(); panel = null; },
+  };
+};
+```
 
-## Anti-Patterns
+### Pattern 5: ChipWell as geometry primitive
 
-### Anti-Pattern 1: Big Bang Shell Replacement
+`ProjectionExplorer` already implements pointer-event chip DnD for 4 wells (v7.2). The `ChipWell` primitive extracts that pattern:
 
-**What people do:** Delete WorkbenchShell, rewrite main.ts in one pass, mount SuperWidget directly on #app.
+- **Authority:** well container owns layout; chips are subordinate
+- **Units:** chip token (variable width, fixed height ~28px)
+- **DnD:** pointer events only, no HTML5 DnD (WKWebView constraint, D-017)
+- **Data binding input:** ordered `Chip[]` per well, each `{ id, dslFragment, typeSignature, displayLabel }`
+- **Data binding output:** same shape mutated by user; consumed by DslCompiler
+- **Cross-well drag:** copy by default, modifier key for move; never silently change chip category
 
-**Why it's wrong:** main.ts is 1,986 lines with ~40 wiring points to `shell.*`. Any silently untouched reference = runtime failure with no compile error (TypeScript would catch `shell.*` but not a stale closure). The 245+ superwidget tests and 3 E2E specs need to pass through every intermediate state.
+---
 
-**Do this instead:** 3-phase incremental migration. Each phase is independently shippable and testable.
+## Anti-Patterns to Avoid
 
-### Anti-Pattern 2: Extending Projection for Shell-Level Tabs
+### Anti-Pattern 1: FormulasProvider owns GROUP BY
 
-**What people do:** Add `tabs: ReadonlyArray<Tab>` to the `Projection` interface to represent which canvas tabs are open.
+Formulas/Calculations may include aggregation expressions (SUM, COUNT, RANK) but must never inject `GROUP BY`. Grouping comes exclusively from PAFVProvider. If no GROUP BY is active, aggregate functions compile as scalar subqueries or window functions.
 
-**Why it's wrong:** The existing 245+ superwidget tests and 3 Playwright E2E specs all use the current Projection shape. `enabledTabIds`/`activeTabId` are used by ExplorerCanvas's internal tab bar (import-export/catalog/db-utilities). `switchTab()` and `toggleTabEnabled()` operate on those fields. Changing the Projection interface breaks the entire canvas system test suite.
+**Why bad:** Breaks the polymorphic view contract (FE-RG-01). The same Calculation chip must produce correct SQL whether SuperGrid has 0 or 5 axes stacked. If FormulasProvider owns GROUP BY, it would conflict with PAFVProvider's stacked axis grouping.
 
-**Do this instead:** Shell-level tabs are a separate `TabMetadata[]` array in `TabManager` scope. Shell tab switching uses `setCanvas()` Projection transition. `TabManager` persists the shell tab list separately as `tabs:list` in ui_state. Projection stays structurally unchanged.
+**Instead:** `FormulasProvider.compile()` returns `selectFragments` only. QueryBuilder places them after the PAFVProvider-driven SELECT columns. GROUP BY comes solely from PAFVProvider.
 
-### Anti-Pattern 3: Status Slot Shared DOM Ownership Without Clearing
+### Anti-Pattern 2: Marks or Audits touching the WHERE clause
 
-**What people do:** Multiple canvases write to the status slot with idempotent guards (`querySelector` before creating), assuming each canvas's check prevents conflict.
+Any predicate that affects row membership is a Filter, not a Mark or Audit. If MarksProvider or AuditsProvider generates WHERE fragments, the chip is misclassified.
 
-**Why it's wrong:** `ViewCanvas` checks for `.sw-view-status-bar` before creating. `ExplorerCanvas` (via statusSlot.ts) checks for `.sw-status-bar`. Switching from Explorer to View leaves `.sw-status-bar` alongside `.sw-view-status-bar` — both guards pass because each looks for its own class. Status slot accumulates stale DOM.
+**Why bad:** Violates FE-RG-07 and FE-RG-08. Post-query annotation is O(n) JS evaluation — idempotent, reversible, no Worker round-trip. WHERE-clause side effects change the result set and require a Worker re-query.
 
-**Do this instead:** `SuperWidget.commitProjection()` clears `statusEl.textContent` when the canvas changes. One clear, correct location. Each canvas then renders a clean status structure.
+**Instead:** MarksProvider and AuditsProvider run predicates against the already-fetched `CellDatum[]` in JavaScript, assigning classes and flags without Worker involvement.
 
-### Anti-Pattern 4: Counting parentElement Hops for Status Slot Discovery
+### Anti-Pattern 3: Extending FilterProvider for formula filter chips
 
-**What people do:** ViewCanvas and EditorCanvas find the status slot via `container.parentElement?.querySelector('[data-slot="status"]')`.
+Formula filter chips are not added to FilterProvider. They live in FormulasProvider. FilterProvider owns the LATCH-surface filter controls (histogram scrubbers, category chips, text-search checkboxes). FormulasProvider owns user-authored DSL predicates that may look like filters.
 
-**Why it's wrong:** This breaks when the canvas slot content gains the `.sw-canvas-layout` flex-row wrapper (Phase 2). `container` is now `mainDiv`, not the canvas slot directly. The parent chain is: `mainDiv` → `canvasLayout` → `canvasEl` → `superWidget root`. One extra hop.
+**Why bad:** Conflates UI-driven LATCH membership filters with user-authored predicate logic. They have different UX, different persistence semantics, and in future different DSL grammar.
 
-**Do this instead:** `container.closest('[data-component="superwidget"]')?.querySelector('[data-slot="status"]')`. More robust, immune to intermediate wrapper additions.
+**Instead:** QueryBuilder ANDs `FilterProvider.compile().whereFragments` and `FormulasProvider.compile().whereFragments` together. They are independent providers that compose at the QueryBuilder boundary.
+
+### Anti-Pattern 4: String concatenation anywhere in DslCompiler
+
+Every value a user provides in a chip's DSL fragment must become a `?` placeholder with a corresponding bind value. Field names must be allowlist-validated. There is no exception for "safe-looking" values.
+
+**Why bad:** One string concatenation breaks the structural injection-safety invariant. Safety must be enforceable at code-review time via structure, not vigilance.
+
+**Instead:** DslCompiler returns `{ sql: string, params: unknown[] }` for every chip. The tuple shape makes it structurally impossible to pass an unbound value to the Worker.
+
+### Anti-Pattern 5: New Worker messages for simple CRUD
+
+Formula Card CRUD does not require new typed Worker messages if `'db:exec'`/`'db:query'` suffice. Inflating WorkerRequestType unnecessarily couples the formula system to the Worker protocol.
+
+**Why bad:** Each new message type requires changes to `protocol.ts`, `handlers/index.ts`, a new handler file, and tests. For simple INSERT/SELECT operations this overhead exceeds the benefit.
+
+**Instead:** Use `'db:exec'` for writes and `'db:query'` for reads, exactly as MutationManager card mutations do. Add typed Worker messages only for operations that need structured response validation (e.g., `'formula:compile-check'` for server-side type-signature validation against live schema data).
+
+---
+
+## Build Order (Dependency-Driven)
+
+```
+Phase 1: DslCompiler
+  Pure function, no dependencies. Full Vitest coverage before any UI.
+
+Phase 2: FormulasProvider + MarksProvider + AuditsProvider
+  Depend on DslCompiler. Follow FilterProvider provider pattern exactly.
+  Register with StateCoordinator + StateManager. Seam tests against real sql.js.
+
+Phase 3: formula_cards SQL table + Worker CRUD
+  DDL that runs cleanly in test DB. CRUD via 'db:exec'/'db:query' or typed messages.
+  CloudKit sync: formula_cards records added to checkpoint export.
+
+Phase 4: ChipWell geometry primitive
+  Extract pointer-event DnD from ProjectionExplorer pattern.
+  Must pass Vitest unit tests for drag state machine before UI integration.
+
+Phase 5: FormulasExplorerPanel (three sub-explorer tabs)
+  Depends on ChipWell + all three providers.
+  Replaces FormulasPanelStub. PanelRegistry unchanged.
+
+Phase 6: QueryBuilder extension
+  Inject FormulasProvider.compile() into SELECT/WHERE/ORDER BY.
+  Integration tests: chip arrangement → SQL round-trip against real sql.js.
+
+Phase 7: Post-query annotation wiring in ViewManager
+  MarksProvider.annotate() + AuditsProvider.annotate() after supergrid:query.
+  Seam tests for annotation → D3 class assignment.
+
+Phase 8: Golden-test corpus
+  Fixture dataset SQL. 30+ test cases for DslCompiler + integration.
+  Anti-patching rule: bug fixes add cases, never weaken assertions.
+```
+
+Phases 1-3 have no jsdom dependency — pure Vitest (same pattern as v6.1 seam tests). Phases 4-5 require jsdom. Phases 6-8 require real sql.js via `realDb()` factory.
+
+---
+
+## Scalability Considerations
+
+| Concern | Impact with new explorers |
+|---------|--------------------------|
+| Worker query latency | Formulas adds SELECT fragments and WHERE clauses. Same indexed columns, same bind-param path. DslCompiler is synchronous and sub-millisecond. No new performance risk. |
+| StateCoordinator rAF batching | 3 new provider subscriptions. rAF coalescing absorbs them without behavior change. Worst case: one extra 16ms window before query fires. |
+| Post-query annotation | O(n) JS predicate evaluation over CellDatum[]. At 2500 cells (50×50 SuperGrid max), this is negligible (<1ms). No Worker round-trip. |
+| Formula Card library size | Hundreds of versioned rows in formula_cards is acceptable. Full library is a single `SELECT * FROM formula_cards WHERE scope = ?`. No per-card Worker messages on load. |
+| Chip arrangement persistence | Serializes to JSON via getState(), stores in ui_state. Same cost as existing FilterProvider/PAFVProvider state. No new infrastructure. |
+
+---
 
 ## Sources
 
-- `src/superwidget/SuperWidget.ts` — 4-slot grid, commitProjection, canvas lifecycle
-- `src/superwidget/projection.ts` — Projection interface, 5 transition functions, validateProjection
-- `src/superwidget/registry.ts` — CanvasRegistryEntry, register/getCanvasFactory
-- `src/superwidget/ViewCanvas.ts` — VIEW_SIDECAR_MAP, onSidecarChange stub (console.debug), status slot DOM traversal
-- `src/superwidget/EditorCanvas.ts` — SelectionProvider-driven status, 4-step destroy ordering
-- `src/superwidget/ExplorerCanvas.ts` — 3-tab bar with switchTab, DataExplorerPanel wrapping
-- `src/superwidget/statusSlot.ts` — renderStatusSlot, updateStatusSlot (DB stats view)
-- `src/ui/WorkbenchShell.ts` — current shell API surface (getCommandBar, getViewContentEl, getSidebarEl, etc.)
-- `src/main.ts` — full wiring: shell creation at line 557, DockNav at 873, PanelManager at 1740, sidecar TODO at line 1616, renderStatusSlot at line 1656
-- `.planning/PROJECT.md` — v13.3 milestone goal definition, v13.2 completion context
+- `/Users/mshaler/Developer/Projects/Isometry/.planning/formulas-explorer-handoff-v2.md` — primary architecture decision document (HIGH confidence)
+- `/Users/mshaler/Developer/Projects/Isometry/src/providers/FilterProvider.ts` — provider pattern reference implementation
+- `/Users/mshaler/Developer/Projects/Isometry/src/providers/QueryBuilder.ts` — SQL assembly boundary
+- `/Users/mshaler/Developer/Projects/Isometry/src/providers/StateCoordinator.ts` — cross-provider notification pattern
+- `/Users/mshaler/Developer/Projects/Isometry/src/worker/protocol.ts` — WorkerRequestType union (35 existing types)
+- `/Users/mshaler/Developer/Projects/Isometry/src/ui/panels/PanelTypes.ts` — PanelHook/PanelFactory interface
+- `/Users/mshaler/Developer/Projects/Isometry/src/ui/panels/FormulasPanelStub.ts` — existing stub to replace
+- `/Users/mshaler/Developer/Projects/Isometry/src/ui/section-defs.ts` — dock navigation (formula item already wired)
+- `/Users/mshaler/Developer/Projects/Isometry/.planning/PROJECT.md` — milestone context and locked architectural decisions (D-001..D-020)
+- `/Users/mshaler/Developer/Projects/Isometry/.planning/geometry-contract-template.md` — geometry contract structure
 
 ---
-*Architecture research for: v13.3 SuperWidget Shell integration*
-*Researched: 2026-04-21*
+*Architecture research for: v15.0 Formulas Explorer Architecture*
+*Researched: 2026-04-27*

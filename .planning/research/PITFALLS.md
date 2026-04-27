@@ -1,157 +1,178 @@
 # Pitfalls Research
 
-**Domain:** Tabbed shell replacement for a stateful data projection tool (v13.3)
-**Researched:** 2026-04-21
-**Confidence:** HIGH — analysis grounded in the live codebase (SuperWidget.ts, ViewCanvas.ts, EditorCanvas.ts, projection.ts, WorkbenchShell.ts, StateManager.ts)
+**Domain:** Adding formula/conditional-formatting/audit system with DSL-to-SQL compilation to an existing local-first TypeScript+sql.js data projection platform (v15.0 Formulas Explorer Architecture)
+**Researched:** 2026-04-27
+**Confidence:** HIGH — grounded in the live codebase, handoff v2, and the 14 existing regression guards (FE-RG-01..14)
 
 ---
 
 ## Critical Pitfalls
 
-### Pitfall 1: Tab Management Code Breaks CANV-06
+### Pitfall 1: DSL Grammar Left Undefined, Downstream Work Proceeds on Different Assumptions
 
 **What goes wrong:**
-Tab management requires knowing which canvas is in each tab. The temptation is to import ViewCanvas or EditorCanvas directly into the tab bar logic to read their state (current view type, card count, editor dirty flag). This immediately violates CANV-06 — "SuperWidget.ts references only CanvasComponent interface — zero references to concrete stub classes." The invariant is enforced by a `readFileSync` assertion in the Playwright CI gate (INTG-03). Any concrete import into SuperWidget.ts, or into a file that SuperWidget.ts imports, breaks the gate.
+The compilation pipeline spec (WA-2) describes the structure of chip → SQL mapping at the clause level, but does not define the DSL grammar at the token level. It defers grammar to "a dedicated DSL design milestone." Meanwhile, WA-3 (Formula Card schema) includes a `dsl` TEXT column, WA-4 (golden-test corpus) hand-writes DSL expressions in test cases, and WA-5 (UX spec) shows DSL fragments in chip wells. If each work area independently assumes different DSL syntax for the same concept — e.g., WA-2 uses `revenue - cost AS profit` while WA-4 uses `profit = revenue - cost` — the corpus test cases will not match the compiler, and UX wireframes will show syntax the grammar cannot parse.
 
 **Why it happens:**
-Tab status badges ("9 cards", "editing: Card Title") seem like they belong on the tab element, and the tab element is owned by SuperWidget. The natural reach is to ask the canvas directly. The correct pattern — canvas signals up via callback, tab bar reflects that signal — requires an indirection layer that isn't obvious when adding the first tab.
+The handoff explicitly defers token-level syntax, but the examples used across work areas to illustrate concepts will implicitly encode syntax assumptions. Writers anchor to the examples and subsequent readers anchor to what the writer wrote. Syntax drift accumulates across six artifacts.
 
 **How to avoid:**
-Tab metadata (display name, badge text, dirty flag) must flow upward via callbacks registered at canvas construction time, never via downward canvas inspection. The CanvasComponent interface should gain an optional `onTabMetadataChange?(meta: TabMeta): void` callback slot — or the factory layer in registry.ts wraps the canvas and adds the signaling. SuperWidget.ts holds the tab state as plain data; it never interrogates the canvas for display state.
+Before WA-2 through WA-6 begin, create a single non-normative **DSL example lexicon** — a short table of ~15 canonical DSL fragments (one per concept: derived column, aggregation, window function, filter predicate, sort directive) that all WA authors must copy verbatim. Mark every example as "illustrative, not authoritative." The grammar milestone will validate or revise them; the architecture milestone's job is internal consistency, not final syntax. A grep check `grep -rE "(profit|revenue|urgent)" .planning/milestones/<this-milestone>/` across all six artifacts should show consistent fragment text.
 
 **Warning signs:**
-- Any `import { ViewCanvas }` or `import { EditorCanvas }` in `src/superwidget/SuperWidget.ts` or files it imports
-- Tab badge text being computed inside SuperWidget.commitProjection() via instanceof checks
-- CI gate `readFileSync` assertion failing in INTG-03
+- WA-4 test cases contain DSL expressions not present in any WA-2 example
+- WA-5 wireframes show a chip editing field with different operators than WA-2 uses
+- Downstream DSL design milestone begins by asking "which syntax from the architecture docs should we implement?"
 
 **Phase to address:**
-Tab management UX phase (first phase of v13.3). Gate must be verified before merging any tab management code.
+WA-1 (Three-Explorer Spec). Establish the example lexicon as an appendix to WA-1 before any other work area is authored.
 
 ---
 
-### Pitfall 2: Concurrent Canvas Instances From Rapid Tab Switching
+### Pitfall 2: Calculation Dependency Cycle Detection Deferred to Implementation
 
 **What goes wrong:**
-The current `commitProjection` flow is: destroy prior canvas → create new canvas → mount. This is safe for single-tab use. With tab management, a user can switch tabs faster than a canvas can complete its async initialization (ViewManager's `switchTo` returns a Promise; NotebookExplorer has debounced auto-save). If a second tab switch fires before the first canvas's async setup finishes, two canvases may both hold references to the same DOM container, the same StateCoordinator subscription, or the same Worker correlation IDs.
+The handoff correctly identifies that Calculations form a dependency DAG and that cycles are compile-time errors (FE-RG-05). The compilation pipeline spec (WA-2) must specify the cycle-detection algorithm and the error surface format. If WA-2 only says "the compiler builds a dependency graph and topologically sorts; cycles are compile-time errors surfaced in the chip UI" without specifying the algorithm, the implementation milestone will make ad hoc decisions: which node in the cycle is highlighted? what is the error message format? how are transitive dependencies tracked when one Calculation references another Formula Card by ID?
 
 **Why it happens:**
-`commitProjection` is synchronous. Canvas `mount()` is synchronous. But ViewManager.switchTo() is async — it fires a Worker query and updates the DOM in the callback. If the canvas is destroyed before the query resolves, the callback fires on a null container. EditorCanvas has the same pattern: the `card:get` bridge call in `_updateStatus` captures `this._statusEl` at fire time but checks it after the await. A destroy between fire and resolution will hit the null guard, but stale Worker correlation IDs remain in flight and will time out rather than cancel.
+Cycle detection feels like an implementation detail. It isn't — the UX of the error state (which chips turn red, what text appears, whether the cycle is traceable back to the exact formula card reference) is a design decision that affects the chip-well geometry contract (WA-6) and the interaction spec (WA-5).
 
 **How to avoid:**
-Each canvas should have an internal `_destroyed` flag checked at every async continuation boundary. ViewCanvas's onProjectionChange already calls `void this._viewManager!.switchTo(...)` — add a guard: `if (this._viewManager === null) return;` before the async resolve. EditorCanvas's `_updateStatus` async bridge call already checks `if (!this._statusEl) return` after the await — this pattern must be upheld in all new status slots. For tab switching specifically: enforce a minimum tab dwell time (100–200ms debounce on `commitProjection`) so rapid key-cycling doesn't queue 5 simultaneous canvas create/destroy cycles.
+WA-2 must specify the cycle-detection algorithm with pseudocode and the exact error surface: a `CycleError` type with `participants: string[]` (Formula Card IDs in cycle order), plus the UI contract — every chip participating in the cycle receives a `data-error="cycle"` attribute that WA-6 maps to a visual state. The chip-well geometry contract (WA-6) §7 States must include "cycle-participant" as a distinct state separate from "type-mismatch" and "drop-rejected."
 
 **Warning signs:**
-- `[WorkerBridge] request timed out` errors appearing in console during rapid tab switching
-- `Cannot set properties of null` in ViewCanvas or EditorCanvas after view switch
-- The existing INTG-04 rapid-switching stress test (3 transitions in <500ms) passing but 5+ transitions failing
+- WA-2 describes cycle detection as "handled by the compiler" without an error data structure
+- WA-6 §7 States does not include a "cycle-participant" visual state
+- WA-5 interaction spec shows a cycle error but WA-2's error type lacks enough fields to populate it
 
 **Phase to address:**
-Tab management UX phase. Add a tab-switch debounce at the projection commit layer, and add a `_destroyed` boolean to both ViewCanvas and EditorCanvas as a prerequisite to wiring tab switching.
+WA-2 (Compilation Pipeline Spec), before WA-5 and WA-6 reference it.
 
 ---
 
-### Pitfall 3: WorkbenchShell Teardown Race Conditions
+### Pitfall 3: SQL Injection Through Bind Value Circumvention in Calculation Expressions
 
 **What goes wrong:**
-WorkbenchShell owns: CommandBar (with its StateCoordinator subscriptions), DockNav, PanelRegistry (which holds references to all 8 explorers), the top/bottom slot DOM elements, and the view content element where ViewManager is mounted. When SuperWidget replaces WorkbenchShell as the top-level container, both may exist in the DOM simultaneously during the transition. If WorkbenchShell.destroy() is called while a Provider subscription callback is in flight (e.g., StateCoordinator's 16ms batch fires at the wrong moment), the callback will write to a destroyed DOM element.
+FE-RG-02 mandates `(sql_text, [bind_values])` tuples from the DSL→SQL compiler. This prevents injection in filter predicate values. However, Calculation expressions (`revenue - cost AS profit`) contain column names and SQL operators that cannot be bind parameters — `?` cannot substitute a column name. The structural rule "never concatenate user input" is easy to satisfy for literal values but hard to satisfy for column references. If the compiler accepts `revenue - cost` and emits `SELECT revenue - cost AS profit`, it must first validate that `revenue` and `cost` are allowlisted column names. If that validation step is missing or incomplete, a user can author `(SELECT password FROM admin_table) AS profit`, which the compiler will embed verbatim.
 
 **Why it happens:**
-The existing pattern for replacing the shell is to `destroy()` the old shell and `mount()` the new one. But StateCoordinator uses a `setTimeout(16ms)` for cross-provider batching. If WorkbenchShell.destroy() runs during that 16ms window, the timer fires afterward and the subscriber (now pointing at a removed DOM node) executes. CommandBar.destroy() calls `_commandBar.destroy()` which cancels its own listeners, but doesn't cancel the StateCoordinator batch timers.
+The existing allowlist pattern (D-003: `allowlisted fields/operators`) is battle-tested in FilterProvider and PAFVProvider, where field names come from a finite set controlled by SchemaProvider. Formula Calculations introduce user-authored expressions where the set of valid identifiers is finite but may grow dynamically as new columns are added. The temptation is to trust that the DSL grammar will prevent invalid identifiers, but grammar validation and injection prevention are two different checks.
 
 **How to avoid:**
-The replacement sequence must be: (1) pause/drain StateCoordinator — call `StateCoordinator.destroy()` before touching the DOM, (2) destroy WorkbenchShell, (3) mount SuperWidget, (4) re-wire StateCoordinator to the new canvas. Alternatively, if StateCoordinator is not replaced but reused, call `unsubscribeAll()` before destroying the shell. The transition should be tested with a seam test that verifies no DOM write happens after WorkbenchShell.destroy() returns.
+WA-2 must specify a two-layer validation for Calculation expressions: (1) DSL grammar parse (structural correctness), (2) identifier allowlist validation (every identifier in the AST is checked against `SchemaProvider.getAllAxisColumns()` plus the set of previously-compiled Calculations). The `allowlist.ts` module's `setValidColumnNames()` pattern (D-015) is the correct extension point — WA-2 must name it explicitly. Operator allowlisting must be specified: arithmetic operators (`+`, `-`, `*`, `/`), aggregates (`SUM`, `AVG`, `COUNT`, `MIN`, `MAX`), and window functions are allowed; subquery keywords (`SELECT`, `FROM`, `WHERE` inside an expression position) are not.
 
 **Warning signs:**
-- `Cannot read properties of null (reading 'dataset')` errors in test output after shell switch
-- StateCoordinator subscriptions firing after the WorkbenchShell DOM element has been removed (detectable via `document.contains(el)` check in subscriber callbacks)
-- WorkbenchShell.destroy() not being the last call before SuperWidget.mount()
+- WA-2 describes compilation with examples using column names but does not mention allowlist validation
+- The compiler spec produces `(sql_text, [bind_values])` where `sql_text` contains identifiers that were never validated against SchemaProvider
+- No reference to `allowlist.ts` or `setValidColumnNames()` in WA-2
 
 **Phase to address:**
-Shell replacement phase (first phase of v13.3). Write the seam test for the WorkbenchShell → SuperWidget handoff before any integration code.
+WA-2 (Compilation Pipeline Spec). The allowlist validation step must be in the spec, not deferred to implementation.
 
 ---
 
-### Pitfall 4: Explorer Sidecar Show/Hide Triggering Unnecessary Worker Re-queries
+### Pitfall 4: Formula Card Type Signatures Tied Too Tightly to Current facet_type Enum
 
 **What goes wrong:**
-The sidecar show/hide for bound views (e.g., ProjectionExplorer auto-appearing when SuperGrid is active) currently works via `onSidecarChange` callback from ViewCanvas. When the explorer transitions in or out (CSS animation), the container resize triggers layout recalculation. If the explorer container resize event is wired to the StateCoordinator (even indirectly — e.g., via ResizeObserver on the view content area), it triggers a `supergrid:query` Worker re-query with identical parameters, burning ~25ms per occurrence (per Phase 74 baselines).
+WA-3 defines a `type_signature` field on Formula Cards. The handoff recommends covering only existing `facet_type` values (text, number, date, select, multi_select, location) for v1, with richer types deferred. The pitfall is not the deferral itself — that is correct — but how the type signature is *stored*. If `type_signature` is a JSON blob encoding `{ input: facet_type[], output: facet_type }`, and later a formula needs to accept arrays or optional values, every stored type signature must be migrated. If instead the spec defines a versioned discriminated union (`{ version: 1, input: ..., output: ... }`), the migration surface is contained.
 
 **Why it happens:**
-SuperGrid uses `SuperPositionProvider` for zoom state and reads container dimensions to calculate the visible cell range. A ResizeObserver is a natural fit for container dimension changes. But the sidecar animation is a CSS transition that fires multiple intermediate resize events over 200–300ms. Without debouncing, each intermediate resize dispatches a Worker query.
+WA-3 is a schema spec, and schemas feel stable. Type signature evolution feels speculative. But the handoff itself says "extensible for richer types (arrays, JSON, geo shapes)" — that extensibility promise is compromised if the storage format is a flat string.
 
 **How to avoid:**
-Two safeguards: (1) ResizeObserver callbacks on the SuperGrid container must debounce at >= the sidecar transition duration (currently ~200ms based on DockNav animation patterns). (2) The `onSidecarChange` signal from ViewCanvas should set a flag that suppresses ResizeObserver-driven re-queries for the transition duration. The sidecar show/hide must not call any Provider `setState()` method — it must be DOM-only (CSS class toggle).
+WA-3 must store `type_signature` as a `TEXT` column containing a versioned JSON structure with a `schema_version: number` discriminant. The spec should provide the v1 structure verbatim and explicitly state that future versions will add new discriminant values — migration code will handle the upgrade path. Do not store it as a comma-separated list of type names or as a flat string that implies no version.
 
 **Warning signs:**
-- PerfTrace logs showing multiple `supergrid:query` Worker messages in rapid succession when toggling a bound explorer
-- StateCoordinator `_schedule()` calls during explorer CSS transition (detectable by adding a PerfTrace hook to StateCoordinator._schedule)
-- Explorer toggle latency exceeding 50ms in the UI
+- WA-3's `type_signature` column schema is `TEXT` with no versioning guidance
+- The worked examples in WA-3 store type signatures as bare strings like `"number,number -> number"`
+- No mention of forward-compatibility or migration path for the type signature field
 
 **Phase to address:**
-Explorer sidecar polish phase. Include a performance regression test: toggle the sidecar 3x and assert fewer than 2 Worker queries fire per toggle.
+WA-3 (Formula Card Schema and Lifecycle).
 
 ---
 
-### Pitfall 5: Status Slot DOM Ownership Conflict Between Canvas Types
+### Pitfall 5: Chip-Well Cross-Explorer Drag Semantics Not Specified Before WA-5 Locks In Interaction
 
 **What goes wrong:**
-The status slot element (`[data-slot="status"]`) is a single shared DOM element. ViewCanvas writes `.sw-view-status-bar` to it. EditorCanvas writes `.sw-editor-status-bar`. statusSlot.ts writes `.sw-status-bar`. When a canvas is destroyed and replaced, the old status bar DOM is left inside the slot unless explicitly removed. The new canvas's idempotent guard (`if (statusEl.querySelector('.sw-view-status-bar')) return`) will find the old bar and skip setup — which is correct only if it's the same canvas type. A ViewCanvas → EditorCanvas transition will find the old `.sw-view-status-bar`, skip EditorCanvas's own setup, and display stale view data under the editor.
+The handoff identifies cross-well drag semantics as Open Question 8 and recommends "copy by default, modifier key for move, never reject." WA-6 (chip-well geometry) §11 lists it as an open question. If WA-5 (UX interaction spec) is authored without WA-6 being finalized first, WA-5 may lock in wireframes that assume a specific drag behavior (e.g., a "move" affordance with strikethrough on the source chip) that contradicts WA-6's coordinate system for the source chip's drag state. The dependency order in the handoff says WA-5 depends on WA-6 being complete — but if the authoring happens in parallel or out of order, this gap opens.
 
 **Why it happens:**
-Each canvas does an idempotent guard on its own class name but does not remove other canvas types' DOM. The `commitProjection` destroy path calls `canvas.destroy()` which nulls `_statusEl` but does not clear the status slot DOM.
+WA-5 and WA-6 feel like they can be written in parallel because they cover different aspects (interaction semantics vs. spatial geometry). But cross-well drag requires both layers to agree: WA-6 must specify whether the source chip enters a "being-moved" visual state or remains unchanged (copy semantics), and WA-5 must specify what the modifier key affordance looks like. If they are written independently, one will be wrong.
 
 **How to avoid:**
-Status slot must be fully cleared before a new canvas type mounts. The cleanest fix: SuperWidget.commitProjection() empties the status slot DOM (`statusEl.textContent = ''`) whenever the canvas type changes (i.e., when `prev.canvasType !== proj.canvasType`). Canvas-specific setup then runs fresh on each type transition. This is already guarded by the `prev.canvasType !== proj.canvasType` check in commitProjection — add `statusEl.textContent = ''` there.
+WA-6 must be co-authored with WA-5 as a blocking dependency, not a parallel track. Specifically, WA-6 §7 States must enumerate the "drag-source-copy" state (source chip stays visible, opacity 0.5) and the "drag-source-move" state (source chip shows strikethrough or ghosting), and these state names must be referenced verbatim in WA-5. The Open Question 8 decision ("copy by default, modifier key for move") must be codified in WA-6 §7 before WA-5 wireframes are drawn.
 
 **Warning signs:**
-- Status bar showing "List · 42 cards" while EditorCanvas is mounted
-- EditorCanvas status showing stale card count from prior ViewCanvas session
-- Test: transition Explorer→View→Editor and assert `.sw-view-status-bar` is absent while editor is active
+- WA-5 wireframes show drag affordances not present in WA-6 §7 States
+- WA-6 §11 still lists cross-well drag as "open" after WA-5 is authored
+- The modifier key for "move" is specified in WA-5 but not in WA-6
 
 **Phase to address:**
-Rich status slot phase, or the tab management phase (whichever introduces multi-canvas type switching).
+WA-6 must be completed before WA-5 is authored. In practice, resolve Open Question 8 in WA-1 as part of defining chip well categories, then carry the decision into WA-6.
 
 ---
 
-### Pitfall 6: Tab Persistence Desync After Dataset Switch or CloudKit Merge
+### Pitfall 6: Marks Post-Query Annotation Bleeds Into Result Set Filtering
 
 **What goes wrong:**
-Tab state (which tabs exist, which is active, tab ordering, per-tab Projection) will be persisted to the `ui_state` table via StateManager. The `ui_state` table is synced via CloudKit (every checkpoint write includes all ui_state rows). When a dataset is switched (`StateManager.setActiveDatasetId`), StateManager restores the persisted tab state for the new dataset. But if the user has CloudKit sync enabled and a second device was active on a different dataset, the merge may bring in a `tabs:active` key from the other device's session. The restored tab Projection may reference a `canvasId` that no longer exists in the registry, or an `activeTabId` (ViewType) that was valid when persisted but is now behind a FeatureGate the current tier doesn't unlock.
+FE-RG-07 states Marks produce CSS classes and never alter row membership. The pitfall is the implementation path: post-query annotation runs after the SQL result set is returned. If the annotation function receives a row and checks `row.priority > 3` to emit `class 'urgent'`, and a developer later adds a "show only marked rows" affordance ("filter to urgent"), they will implement it by running the Marks predicate in the WHERE clause — converting a Mark into a Filter. This violates FE-RG-07 and FE-RG-08 but feels natural to implement. The guard in the spec must pre-empt this.
 
 **Why it happens:**
-Projection validation (`validateProjection`) guards structural correctness but not registry membership. A canvasId not in the registry causes `canvasFactory` to return `undefined`, which currently logs a warning and stores the Projection without a canvas. Tab state from a different device or tier can survive a merge intact but be unrenderable.
+The line between "highlight rows matching predicate" and "filter rows matching predicate" is architecturally important but operationally thin. The predicate is identical. The distinction is what happens to non-matching rows: Marks shows them with no class; Filters excludes them. Developers implementing a "filter to marked" feature will take the shortest path, which is reusing the Mark's predicate in a WHERE clause rather than adding a new Filter chip.
 
 **How to avoid:**
-Tab persistence must go through a migration layer analogous to `StateManager._migrateState()`. On restore: (1) validate each Projection with `validateProjection`, (2) check `getRegistryEntry(proj.canvasId)` — unknown canvasIds fall back to a default Projection, (3) check FeatureGate for the canvasType — downgraded tabs collapse to Explorer canvas. Document this in the StateManager restore path, not in SuperWidget itself. Add a test: persist a Projection with `canvasId: 'nonexistent-canvas'`, simulate CloudKit restore, assert the shell shows a graceful fallback rather than a blank canvas.
+WA-2 must specify that the post-query annotation function is structurally prevented from returning rows or affecting row counts — it receives `rows: ResultRow[]` and returns `annotations: Map<rowId, string[]>` (a class list per row), nothing else. The function signature makes it impossible to filter. A "filter to marked rows" feature, if ever implemented, must create a Filter chip whose predicate mirrors the Mark predicate — it cannot reuse the Mark annotation path. WA-1 should state this explicitly in the Marks out-of-scope list.
 
 **Warning signs:**
-- Blank canvas area with no status content after a reload or dataset switch
-- `[SuperWidget] canvasFactory returned undefined` warnings in the console after CloudKit sync
-- Restored tab active tab ID not matching any ViewType in VIEW_DISPLAY_NAMES
+- WA-2 specifies the Marks annotation function as returning `rows: ResultRow[]` instead of `annotations: Map<rowId, string[]>`
+- WA-5 includes a "show only marked rows" interaction without specifying that it creates a new Filter chip
+- A developer asks "can we filter by mark class?" during implementation
 
 **Phase to address:**
-Tab persistence phase. The migration layer must be implemented in the same phase as initial persistence — retrofitting it later is a rewrite risk.
+WA-2 (Compilation Pipeline Spec) — the annotation function return type is the structural guard.
 
 ---
 
-### Pitfall 7: Projection State Machine Not Designed for Multi-Tab
+### Pitfall 7: Formula Card Versioning Creates Silent Schema Accumulation in sql.js
 
 **What goes wrong:**
-The current `Projection` type encodes a single view's state: `canvasType`, `canvasBinding`, `canvasId`, `activeTabId`, `enabledTabIds`. A tab bar with multiple tabs requires persisting N Projections (one per tab slot) plus the index of the active tab. Extending Projection directly (e.g., adding `tabs: Projection[]`) creates a recursive type that breaks reference equality bail-out logic and makes `validateProjection` significantly more complex. Alternatively, encoding all tab state into a single flat Projection (e.g., `enabledTabIds` as the tab list) reuses `activeTabId` for tab selection — but then `switchTab` semantics collide with ViewCanvas's use of `activeTabId` to encode the current ViewType.
+The handoff recommends retaining all Formula Card versions. At Brenda's scale (heavy iteration), this creates hundreds of rows in `formula_cards`. Each row has a `dsl` field containing potentially complex expressions, a `test_cases` JSON array, and provenance metadata. The sql.js database is a WASM-hosted in-memory database that checkpoints to a binary blob — every checkpoint includes all formula_cards rows. At 500 versions of 20 Formula Cards, the checkpoint cost grows. More critically, the golden-test corpus (WA-4) fixture dataset includes formula_cards rows — if the corpus fixture grows unboundedly, integration tests slow down.
 
 **Why it happens:**
-`enabledTabIds` and `activeTabId` were designed to encode which views are visible within a single canvas (e.g., which of the 9 D3 views a ViewCanvas has enabled). Tab management at the shell level is a different dimension of state. Using the same fields for both purposes creates ambiguity: does `activeTabId: 'supergrid'` mean "the SuperGrid view tab is active inside this ViewCanvas" or "the canvas in tab slot named 'supergrid' is active"?
+"Retain all versions" is the correct default for user data (users want rollback). But the spec does not constrain version accumulation, and the implementation will not add pruning until it becomes a visible problem. By then, the schema is locked and pruning requires careful migration to avoid breaking version references in `dependencies`.
 
 **How to avoid:**
-Multi-tab state must live at a layer above the Projection type. Introduce a `TabSlot` type: `{ tabId: string; label: string; projection: Projection }`. The shell manages `TabSlot[]` and the index of the active slot. The active `TabSlot.projection` is what gets passed to `SuperWidget.commitProjection()`. This preserves the existing Projection semantics (activeTabId = ViewType within a ViewCanvas) without collision. The `enabledTabIds` field retains its meaning as the set of ViewType tabs enabled within a ViewCanvas. Tab management state is never encoded inside Projection.
+WA-3 must specify a version retention policy even if v1 is "retain all." The policy should be a named constant (`VERSION_RETENTION_POLICY: 'retain-all' | 'keep-last-N'`) stored in ui_state, so a future milestone can change the policy without a schema migration. WA-3 must also specify whether `dependencies` references a specific version (`formula_cards.id`) or a card's canonical identity (`formula_cards.canonical_id`) — version-independent references are safer and enable pruning of old versions without breaking the dependency graph.
 
 **Warning signs:**
-- `activeTabId` values appearing in both tab bar rendering logic and ViewCanvas.onProjectionChange
-- `enabledTabIds` being used to enumerate the tab bar's visible tabs instead of the canvas's enabled views
-- `validateProjection` growing conditional logic based on whether the projection is "top-level tab state" vs "canvas-internal state"
+- WA-3 `formula_cards` schema has no `canonical_id` field — only auto-increment `id` — making version-independent references impossible
+- WA-4 fixture loads all formula_cards versions into the test database, making the fixture grow with each corpus test added
+- No retention policy constant defined in the schema spec
 
 **Phase to address:**
-Tab management UX phase, before any tab state is persisted. The type design is load-bearing — getting it wrong causes a rewrite.
+WA-3 (Formula Card Schema and Lifecycle), before WA-4 builds its fixture against the schema.
+
+---
+
+### Pitfall 8: Undo/Redo Scope Ambiguity Between Chip Arrangement and Formula Card Saves
+
+**What goes wrong:**
+The handoff says chip arrangements are undo/redo-able. MutationManager already implements command-pattern undo/redo (D-009). Two distinct undo scopes exist: (1) chip arrangement changes (drag a chip to a new position → undo returns it), (2) Formula Card saves (bottom-up promotion: user clicks "Save as Formula" → undo deletes the saved card). If both scopes share the same MutationManager stack, a "Save as Formula" action gets interleaved with chip rearrangement actions, and undoing through the stack can produce states where a formula card exists but the chip arrangement that produced it is gone, or vice versa.
+
+**Why it happens:**
+MutationManager is the existing undo/redo infrastructure — it is natural to extend it for Formula Card operations. But chip arrangement state is ephemeral (Tier 3 per D-005); Formula Card saves are durable (Tier 1: database). Mixing ephemeral and durable operations in the same undo stack violates the three-tier persistence model.
+
+**How to avoid:**
+WA-5 must specify two distinct undo scopes: (1) chip arrangement undo is local to the explorer session — it is not MutationManager-mediated and does not persist; it uses a simple in-explorer arrangement history (an array of chip well snapshots). (2) Formula Card save/delete goes through MutationManager as a durable mutation. These scopes never interleave. WA-5 must also specify the keyboard UX: Cmd+Z in a chip well undoes the last chip arrangement change, not the last Formula Card save.
+
+**Warning signs:**
+- WA-5 says chip arrangement undo "goes through MutationManager" or "integrates with existing undo/redo"
+- WA-3 does not specify the undo behavior for Formula Card save/delete as a MutationManager command
+- The interaction spec does not distinguish Cmd+Z scope based on whether a chip well or the card library is focused
+
+**Phase to address:**
+WA-5 (UX Interaction Spec), drawing on the Tier distinction from D-005.
 
 ---
 
@@ -159,11 +180,11 @@ Tab management UX phase, before any tab state is persisted. The type design is l
 
 | Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
 |----------|-------------------|----------------|-----------------|
-| Persist tab state as a flat JSON blob in a single `ui_state` row | Fast to implement | Migration is a full reparse; adding a field requires versioning the entire blob | Only for initial prototype — migrate to per-field keys before CloudKit sync is enabled for tabs |
-| Reuse WorkbenchShell's `_viewContentEl` as the SuperWidget canvas slot during transition | Avoids parallel DOM tree | WorkbenchShell destroy pulls the canvas slot out from under SuperWidget | Never — the two shells must have independent DOM trees |
-| Trigger explorer show/hide from StateCoordinator subscription | Reuses existing notification pathway | Fires on every Provider state change, not just view switches — O(N) resize events per filter change | Never — sidecar show/hide must be driven by the ViewCanvas onSidecarChange callback only |
-| Skip status slot cleanup between canvas type transitions | Simpler destroy path | Stale status DOM from prior canvas type remains; next canvas's idempotent guard skips initialization | Never — clear the slot on canvas type change |
-| Write tab metadata directly from within commitProjection | Avoids callback indirection | Pulls concrete canvas knowledge into SuperWidget, breaking CANV-06 | Never |
+| DSL grammar deferred to next milestone with no example lexicon established | WA-1 ships faster | Each subsequent WA author independently assumes different DSL syntax; the grammar milestone inherits conflicting examples | Never — establish a non-normative example lexicon before WA-2 begins |
+| `type_signature` stored as a plain string (e.g., `"number -> number"`) | Schema is simpler | Adding optional inputs or richer types requires parsing all existing values and migrating them | Only acceptable if spec explicitly states the format is temporary and provides a migration path |
+| Chip arrangement undo wired through MutationManager | Reuses existing infrastructure | Ephemeral chip state and durable Formula Card saves interleave in the undo stack, violating three-tier persistence | Never — chip arrangement undo must be scoped to the explorer session |
+| Golden test corpus cases added as comments in WA-2 examples rather than a separate fixture file | Reduces document count | Corpus is not runnable; anti-patching rule cannot be mechanically enforced | Never for regression cases; acceptable for illustrative examples |
+| Formula Card `dependencies` referencing `formula_cards.id` (version-specific) | Simpler schema | Pruning old versions breaks the dependency graph; version-independent references (`canonical_id`) are required for retention policy flexibility | Never — `canonical_id` must be in the schema from the start |
 
 ---
 
@@ -171,11 +192,11 @@ Tab management UX phase, before any tab state is persisted. The type design is l
 
 | Integration | Common Mistake | Correct Approach |
 |-------------|----------------|------------------|
-| StateManager tab persistence | Registering tab state under a non-scoped key so it survives dataset switch | Use `sm.registerScopedProvider('tabs', ...)` so tab layout is per-dataset |
-| CloudKit sync + tab state | Syncing tab state as part of the base `ui_state` table — devices with different tier subscriptions restore incompatible canvasIds | Filter tab Projections through FeatureGate on restore; downgrade unknown canvasTypes to Explorer |
-| ViewCanvas status slot vs statusSlot.ts | statusSlot.ts creates `.sw-status-bar`; ViewCanvas creates `.sw-view-status-bar` — two different schemas, same container | ViewCanvas owns its status DOM schema; statusSlot.ts is for ExplorerCanvas only. Do not mix the two schemas in the same slot element |
-| EditorCanvas card:get bridge call during rapid tab switching | The async bridge call outlives the canvas lifecycle; the null guard fires but the Worker correlation ID hangs | Add `_destroyed` flag; check flag before `void bridge.send(...)` is called |
-| DockNav + SuperWidget coexistence | DockNav lives in WorkbenchShell's sidebar slot; SuperWidget is the content area. If SuperWidget takes over WorkbenchShell's role, DockNav must be re-parented, not re-created | Preserve DockNav instance across the shell transition; re-parent its DOM element into SuperWidget's header slot or a sibling container |
+| SchemaProvider allowlist (allowlist.ts) | WA-2 compiler validates column names against a static list hardcoded in the compiler | The compiler must call `setValidColumnNames()` at initialization and re-validate when SchemaProvider notifies of schema changes (dynamic columns may be added) |
+| FilterProvider (existing) | WA-2 assumes Formulas Explorer's Filter chips replace FilterProvider — they are the same thing | Formulas Filter chips must compile through FilterProvider's existing `addFilter()`/`compile()` interface; they do not bypass it. The compiler output feeds FilterProvider, not SQL directly |
+| MutationManager | Formula Card save/delete treated as ephemeral — no undo support | Formula Card operations are Tier 1 (durable); every save and delete must be a MutationManager command with an inverse |
+| StateManager persistence (three-tier) | Chip well arrangement state persisted to ui_state (Tier 1) | Chip arrangement is Tier 3 (ephemeral, session-only); only the compiled Formula Card IDs assigned to wells persist (Tier 2), not the ad hoc arrangement itself |
+| CloudKit sync | Formula Cards synced as rows in the cards table (reusing existing sync infrastructure) | Formula Cards must sync independently as `formula_cards` table rows; using the cards table conflates user data with formula metadata and breaks SchemaProvider introspection |
 
 ---
 
@@ -183,11 +204,21 @@ Tab management UX phase, before any tab state is persisted. The type design is l
 
 | Trap | Symptoms | Prevention | When It Breaks |
 |------|----------|------------|----------------|
-| Status slot update on every StateCoordinator tick | Status bar flickering; Worker re-queries correlated with filter changes | Status updates must be driven by ViewCanvas.onViewSwitch callback or SelectionProvider.subscribe, not StateCoordinator | Any active filter — every filter change fires StateCoordinator |
-| Per-tab Projection validation on every commitProjection call | Noticeable latency on tab switch at 20K cards | validateProjection is O(N) on enabledTabIds.length — keep tab counts below 10; negligible at human scales | Only relevant if enabledTabIds is misused to encode large arrays |
-| ResizeObserver on SuperWidget root triggering SuperGrid re-render during sidecar animation | Multiple Worker queries during explorer toggle (see Pitfall 4) | Debounce ResizeObserver callback at >= transition duration | Any sidecar animation — immediately when explorer show/hide is animated |
-| Bridge `card:get` per status update in EditorCanvas | Each selection change issues a Worker round-trip to fetch the card name for status display | Pre-load card name into SelectionProvider as metadata, or cache `{ id → name }` in EditorCanvas | With rapid selection changes (keyboard navigation through cards) |
-| Tab persistence writes on every tab switch | Multiple `ui:set` Worker messages per second during drag-reorder | Debounce tab state persistence at 500ms (same as notebook autosave pattern) | When tab reordering is fast — immediately |
+| Dependency DAG traversal on every chip rearrangement | Noticeable lag during drag — every chip move triggers a full topological sort | Topological sort only on compile (chip drop + "Save" action), not on every drag-over event | Immediately with >10 interdependent Calculation chips |
+| Marks post-query annotation running on all rows before virtualization | Annotation O(N) cost visible at 10K+ cards | Annotation must run only on visible rows (post-virtualization slice), not the full result set | Any dataset >5K cards with Marks active |
+| Formula Card type validation on every chip drag-over event | Drop targets stutter during drag | Type validation runs only on pointerup (chip drop), not pointerover | Immediately with >5 chip wells visible simultaneously |
+| Compile-on-every-chip-change without debounce | Worker re-queries at ~60fps during chip drag | Debounce compilation at ≥200ms trailing edge; live preview fires after drag settles, not during drag motion | Immediately when a Filter chip is being dragged |
+| Formula Card golden-test corpus loaded into in-memory sql.js for every test case | Test suite slowdown as corpus grows | Corpus fixture loaded once per test file (beforeAll), not per test case; use `realDb()` factory with pre-loaded fixture | When corpus reaches ~50+ test cases |
+
+---
+
+## Security Mistakes
+
+| Mistake | Risk | Prevention |
+|---------|------|------------|
+| Calculation expression identifier not validated against allowlist | User-authored DSL expression embeds a subquery (`(SELECT secret FROM admin_table) AS label`) — compiler emits it verbatim into SELECT clause | WA-2 must specify two-layer validation: (1) grammar parse, (2) identifier allowlist against SchemaProvider. Subquery keywords in expression position are a grammar-level error |
+| Bind values bypassed for SQL keywords in filter predicates | User types `1=1 OR 1` as a filter value — if the compiler naively wraps it in a parameter, it is safe; if it detects it looks like SQL and treats it differently, it may embed it | Bind values must never be inspected for SQL-likeness — every user value is a bind parameter without exception |
+| DSL fragment stored in `formula_cards.dsl` and later eval'd at execution time | Stored DSL treated as trusted — a formula card edited via direct database manipulation (e.g., DB Utilities viewer) could inject malicious DSL | The compiler must always recompile from stored DSL — it cannot skip compilation and exec the stored `sql` field directly. The `sql` column is a cache for display; the `dsl` column is always recompiled through the validator |
 
 ---
 
@@ -195,23 +226,44 @@ Tab management UX phase, before any tab state is persisted. The type design is l
 
 | Pitfall | User Impact | Better Approach |
 |---------|-------------|-----------------|
-| Tab bar shows canvasId strings (e.g., "view-1") instead of human labels | Users see internal IDs, not meaningful names | Tab label comes from the canvas registry entry's display name field, not the canvasId |
-| Tab close removes the only tab | Blank canvas with no recovery path | Guard: never allow closing the last tab; hide close button at 1 tab |
-| Explorer sidecar obscures tab bar during transition | Sidecar slides in and covers the tab strip | Sidecar must expand into the content area below the tab bar; SuperWidget CSS Grid row order is header → tabs → canvas → status |
-| Tab reorder triggers dataset switch | User accidentally drops a tab onto the wrong zone | Tab reorder DnD must be strictly within the tab bar; no drop zones outside |
-| Status slot empty during canvas mount | Brief blank status creates layout shift | Status slot renders a loading skeleton immediately on canvas mount, replaced with real data when canvas signals |
+| Chip type-mismatch error shown only after drop, not during drag-over | User drags a chip into an incompatible well, releases it, then sees an error — the chip bounces back after commitment | Type validation must run on drag-over and update the drop zone's visual state (valid/invalid) before the user commits the drop |
+| "Save as Formula" trigger not visually distinct from chip arrangement actions | User accidentally promotes an exploratory arrangement to a saved card | Promote/save is a secondary button with a confirmation step — never a single click in the primary drag area |
+| Explain panel shows raw SQL with bind parameter placeholders (`?`) but no value preview | Brenda cannot verify the filter value is what she typed | Explain panel must show `?` annotated with the corresponding bind value: `WHERE priority > ?  /* 3 */` |
+| Chip ordering implied to be flexible but Sort chips have semantic order | User reorders Sort chips thinking it is arbitrary — but chip order determines ORDER BY priority | Sort chip well shows numbered badges (1, 2, 3) indicating sort priority; reorder affordance makes explicit that changing order changes sort priority |
+| Formula Card library shown as a flat list — card scope (dataset vs global) not visible | User applies a global formula card to the wrong dataset context | Card library groups by scope (dataset / global) with a scope badge on each card |
+
+---
+
+## Gaps in the Existing 14 Regression Guards (FE-RG-01..14)
+
+The handoff's 14 regression guards are well-chosen but leave the following gaps:
+
+**Gap 1 — No guard for example lexicon consistency across work areas (FE-RG-15 candidate).**
+FE-RG-01..14 govern runtime behavior and architectural boundaries. No guard exists for spec-internal consistency: DSL examples used in WA-2, WA-4, and WA-5 drifting from each other. Proposed guard: "All DSL expressions in WA-2, WA-4, and WA-5 must be drawn from the canonical example lexicon in WA-1 Appendix. Novel syntax in downstream work areas is a spec error."
+
+**Gap 2 — No guard for the Marks annotation return type (FE-RG-16 candidate).**
+FE-RG-07 says Marks never alter row membership, but does not constrain the function signature. Proposed guard: "The Marks post-query annotation function signature is `(rows: ResultRow[]) => Map<string, string[]>` — input rows, output class list per rowId. Any signature that returns rows or a filtered subset is a violation of FE-RG-07."
+
+**Gap 3 — No guard for chip arrangement vs Formula Card undo scope separation.**
+D-005 (three-tier persistence) is established, but no FE-RG explicitly extends it to the Formulas Explorer undo story. Chip arrangement is Tier 3 (ephemeral); Formula Card saves are Tier 1 (durable). Without a guard, the undo scopes get conflated during implementation.
+
+**Gap 4 — No guard for FilterProvider integration path.**
+FE-RG-02 guards SQL injection at the compiler level. But nothing guards the integration boundary: Filter chips could bypass FilterProvider and write directly to the Worker SQL query, skipping FilterProvider's double-validation (D-003). A guard is needed: "Filter chip compilation output must flow through FilterProvider.addFilter() — direct SQL injection into the Worker query is a violation."
+
+**Gap 5 — No guard for identifier allowlist validation in Calculation expressions.**
+FE-RG-02 prevents literal value injection via parameterized queries. But Calculation identifiers (column names in expressions) cannot be bind parameters and must be allowlisted. No existing FE-RG covers this path. Proposed guard: "Every identifier in a Calculation expression must appear in `SchemaProvider.getAllAxisColumns()` or in the set of previously compiled Formula Card output names before the expression is emitted into SQL."
 
 ---
 
 ## "Looks Done But Isn't" Checklist
 
-- [ ] **Tab persistence:** Tab state is saved — but verify it survives `window.location.reload()`, dataset switch, and a CloudKit merge with a stale `tabs:active` key from a different device.
-- [ ] **CANV-06 invariant:** Tab management UI is wired — but run the `readFileSync` assertion test to confirm SuperWidget.ts has zero concrete canvas imports.
-- [ ] **Explorer sidecar show/hide:** Animation works visually — but verify via PerfTrace that no supergrid:query fires during the sidecar CSS transition.
-- [ ] **Status slot cleanup:** Status updates correctly for each canvas type — but verify that a View→Editor→View roundtrip shows the correct view status (not editor status) on the final View.
-- [ ] **Destroy ordering on tab close:** Canvas destroy is called — but verify StateCoordinator subscriptions are cancelled before the DOM element is removed (seam test: `document.contains(el)` must be false before any subscriber callback fires).
-- [ ] **WorkbenchShell retirement:** SuperWidget is the active shell — but verify WorkbenchShell.destroy() was called (no orphaned CommandBar, no leaked DockNav subscription, no duplicate StateManager registrations).
-- [ ] **Rapid-switching stress test:** 3 transitions pass (existing INTG-04) — but verify 10 rapid transitions produce no orphaned Worker correlation IDs (check WorkerBridge pending-request Map after stress).
+- [ ] **WA-2 Compilation Pipeline:** Clause order and bind value protocol documented — but verify the identifier allowlist step is specified for Calculation expressions (not just filter values).
+- [ ] **WA-3 Formula Card Schema:** DDL is valid SQLite — but verify `canonical_id` exists for version-independent dependency references, and `type_signature` is stored with a version discriminant.
+- [ ] **WA-4 Golden Test Corpus:** 30+ test cases hand-written — but verify each case's `expected_sql` can be mechanically checked (not just visually reviewed) and that the fixture SQL runs against an actual sql.js instance.
+- [ ] **WA-5 UX Interaction Spec:** Chip drag-over shows valid/invalid state — but verify the validation runs on pointerover (not just pointerup) and that the state uses WA-6's enumerated state names verbatim.
+- [ ] **WA-6 Chip-Well Geometry Contract:** §3 says "N/A — operator surface" — but verify it is not silently empty; the rationale must be present (FE-RG-13).
+- [ ] **Cross-well drag semantics:** Open Question 8 is resolved in the handoff — but verify WA-6 §7 States includes both "drag-source-copy" and "drag-source-move" states, and WA-5 specifies the modifier key affordance.
+- [ ] **Marks post-query annotation:** Defined in WA-2 — but verify the return type is `Map<rowId, string[]>`, not `ResultRow[]`.
 
 ---
 
@@ -219,12 +271,12 @@ Tab management UX phase, before any tab state is persisted. The type design is l
 
 | Pitfall | Recovery Cost | Recovery Steps |
 |---------|---------------|----------------|
-| CANV-06 broken by tab management code | LOW | Move the concrete import to registry.ts or main.ts; pass metadata via callback; re-run CI gate |
-| Concurrent canvas instances from rapid switching | MEDIUM | Add `_destroyed` flag to both ViewCanvas and EditorCanvas; add debounce to tab switching; write INTG-04 variant for 10 rapid switches |
-| WorkbenchShell teardown race | MEDIUM | Audit all StateCoordinator.subscribe() callsites in WorkbenchShell; ensure all are unsubscribed in destroy(); add seam test for post-destroy callback safety |
-| Tab state desync after CloudKit merge | HIGH | Add Projection migration layer to StateManager restore path; write test for round-trip with unknown canvasId; migration is load-bearing and requires its own phase |
-| Projection type collision (activeTabId dual semantics) | HIGH | Introduce TabSlot wrapper type before any persistence code is written; retrofitting after persistence is wired is a rewrite |
-| Status slot DOM conflict between canvas types | LOW | Add `statusEl.textContent = ''` in commitProjection on canvas type change; write test for View→Editor→View status content |
+| DSL syntax drift across work areas | MEDIUM | Add WA-1 example lexicon appendix; grep all work area artifacts for divergent syntax; reconcile before corpus test cases are finalized |
+| Cycle detection not specified → implementation makes ad hoc choices | MEDIUM | Add `CycleError` type and chip state to WA-2; retrofit into WA-5 wireframes and WA-6 §7 States before implementation milestone begins |
+| SQL injection via Calculation identifier | HIGH | Add identifier allowlist step to WA-2 compiler spec; the gap must be closed before the DSL grammar milestone begins implementing the compiler |
+| Chip arrangement undo wired through MutationManager | MEDIUM | Refactor WA-5 undo scope section; explicitly separate Tier 3 arrangement history from Tier 1 MutationManager commands |
+| Formula Card `dependencies` referencing version-specific IDs | HIGH | Requires schema migration to add `canonical_id` — catch before WA-4 builds its fixture; the fixture schema becomes the reference for the implementation milestone |
+| Marks annotation returning rows (breaking FE-RG-07) | LOW in spec, HIGH in implementation | Correct WA-2 function signature; add to FE-RG as a proposed guard before implementation begins |
 
 ---
 
@@ -232,29 +284,30 @@ Tab management UX phase, before any tab state is persisted. The type design is l
 
 | Pitfall | Prevention Phase | Verification |
 |---------|------------------|--------------|
-| CANV-06 broken by tab management | Tab management UX (first phase) | `readFileSync` assertion in Playwright gate; zero concrete canvas imports in SuperWidget.ts |
-| Concurrent canvas instances from rapid switching | Tab management UX (first phase) | INTG-04 variant: 10 rapid switches, assert Worker pending-request Map is empty after |
-| WorkbenchShell teardown race | Shell replacement phase | Seam test: post-destroy StateCoordinator callback must not write to DOM |
-| Explorer sidecar triggering re-queries | Explorer sidecar polish phase | PerfTrace assertion: fewer than 2 supergrid:query messages per sidecar toggle |
-| Status slot DOM conflict | Rich status slots phase | Test: View→Editor→View roundtrip, assert correct status schema in slot |
-| Tab persistence desync after CloudKit | Tab persistence phase (same phase as initial persistence) | Test: restore Projection with unknown canvasId → graceful fallback, no blank canvas |
-| Projection type collision | Tab management type design (before persistence) | TypeScript strict mode: TabSlot type isolates tab-level from canvas-level activeTabId semantics |
+| DSL syntax drift across work areas | WA-1 (before any other WA begins) | Grep: all DSL examples in WA-2/4/5 match WA-1 appendix lexicon |
+| Cycle detection underspecified | WA-2 | `CycleError` type present; WA-6 §7 States includes "cycle-participant" |
+| Calculation identifier injection | WA-2 | Identifier allowlist step present in compiler flow; no code path produces SQL identifier from unvalidated user input |
+| Type signature format not versioned | WA-3 | `type_signature` JSON includes `schema_version` discriminant; `canonical_id` column exists |
+| Cross-well drag semantics unresolved | WA-6 (before WA-5) | WA-6 §7 includes "drag-source-copy" and "drag-source-move" states; Open Question 8 closed |
+| Marks annotation bleeds into filtering | WA-2 | Annotation function returns `Map<string, string[]>`, not rows |
+| Chip undo vs Formula Card undo scope | WA-5 | Two distinct undo scopes named; Tier 3 arrangement history vs Tier 1 MutationManager commands |
+| Formula Card version accumulation | WA-3 | `canonical_id` present; `VERSION_RETENTION_POLICY` constant defined |
+| FilterProvider bypass | WA-2 | Compilation output explicitly routed through FilterProvider.addFilter() |
 
 ---
 
 ## Sources
 
-- Live source: `src/superwidget/SuperWidget.ts` — commitProjection lifecycle, single-canvas assumptions
-- Live source: `src/superwidget/projection.ts` — Projection type, validateProjection, transition functions
-- Live source: `src/superwidget/ViewCanvas.ts` — async onProjectionChange, status slot DOM pattern, onSidecarChange callback
-- Live source: `src/superwidget/EditorCanvas.ts` — async bridge call in _updateStatus, destroy ordering (D-14)
-- Live source: `src/superwidget/statusSlot.ts` — ExplorerCanvas status schema (distinct from ViewCanvas schema)
-- Live source: `src/ui/WorkbenchShell.ts` — DOM structure being replaced, CommandBar ownership
-- Live source: `src/providers/StateManager.ts` — scoped key pattern, debounce autosave, _migrateState precedent
-- Project history: v13.0 REQUIREMENTS.md — CANV-06 specification and readFileSync gate
-- Project history: v13.2 REQUIREMENTS.md — INTG-04 rapid-switching stress test, D-14 destroy ordering
-- Project history: PROJECT.md — WorkbenchShell lifecycle decisions (v5.0 validated), StateCoordinator batching (v3.0 validated), CloudKit sync merge patterns (v4.1 validated)
+- Handoff document: `.planning/formulas-explorer-handoff-v2.md` — 14 regression guards, work area structure, open questions
+- Project context: `.planning/PROJECT.md` — D-003 (allowlist + parameterized SQL), D-005 (three-tier persistence), D-009 (MutationManager undo), v6.1 anti-patching rule
+- Codebase: `src/allowlist.ts`, `FilterProvider`, `SchemaProvider` — existing SQL safety infrastructure
+- HyperFormula dependency graph documentation (hyperformula.handsontable.com) — formula engine dependency graph architecture and invalidation patterns
+- OWASP SQL Injection Prevention Cheat Sheet — parameterized query and allowlist validation guidance
+- Drag-and-drop UX best practices (smart-interface-design-patterns.com) — undo recovery, drag state management
+- SQLBI DAX circular dependency analysis (sqlbi.com) — real-world formula cycle detection case study
+- Tableau shelf/pill model (help.tableau.com) — same-primitive-different-role-per-shelf insight referenced in FE-RG-06
+- Research: Practical specification pitfalls (practicallogix.com, fabrity.com) — over/under-specification patterns in architecture-only milestones
 
 ---
-*Pitfalls research for: SuperWidget Shell replacement — tab management, explorer sidecar, rich status slots*
-*Researched: 2026-04-21*
+*Pitfalls research for: v15.0 Formulas Explorer Architecture — DSL compilation, formula dependency graph, type signatures, chip-well UX, spec-only milestone risks*
+*Researched: 2026-04-27*
