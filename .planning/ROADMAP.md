@@ -149,7 +149,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 182. Three-Explorer Boundary Spec | 1/1 | Complete   | 2026-04-27 |
+| 182. Three-Explorer Boundary Spec | 1/1 | Complete    | 2026-04-27 |
 | 183. Chip-Well Geometry Contract | 0/TBD | Not started | - |
 | 184. Compilation Pipeline Spec | 0/TBD | Not started | - |
 | 185. Formula Card Schema | 0/TBD | Not started | - |
