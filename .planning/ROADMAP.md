@@ -53,7 +53,7 @@ All phases 1-181 are archived in `.planning/milestones/` under their respective 
 
 - [x] **Phase 182: Three-Explorer Boundary Spec** - Define the fundamental three-way split (Formulas/Marks/Audits) with type signatures, composition rules, and regression guards (completed 2026-04-27)
 - [x] **Phase 183: Chip-Well Geometry Contract** - Specify the reusable spatial primitive for chip wells, drag states, and accessibility contract (completed 2026-04-27)
-- [ ] **Phase 184: Compilation Pipeline Spec** - Define the chip-arrangement-to-SQL compilation pipeline, dependency resolution, and annotation algorithms
+- [x] **Phase 184: Compilation Pipeline Spec** - Define the chip-arrangement-to-SQL compilation pipeline, dependency resolution, and annotation algorithms (completed 2026-04-27)
 - [ ] **Phase 185: Formula Card Schema** - Define the SQLite DDL, versioning strategy, type-signature validation, and sync conflict resolution for formula_cards
 - [ ] **Phase 186: Operator-Contract Template** - Fork the geometry contract template into an operator-surface variant with usage guide
 - [ ] **Phase 187: Golden-Test Corpus Plan** - Define the fixture dataset, test case corpus, test runner architecture, and anti-patching policy
@@ -100,9 +100,9 @@ Plans:
   4. The Marks post-query annotation algorithm produces `Map<rowId, string[]>` CSS class assignments and the Audits annotation produces flag/badge metadata, with both algorithms explicitly prohibited from filtering the result set
   5. The explain panel contract specifies the exact format of compiled SQL shown to users, including how bind-value placeholders are rendered
   6. Ten worked examples cover the full range from single-chip arrangements to multi-chip combinations, and each example shows the expected SQL output verbatim
-**Plans:** 1 plan
+**Plans:** 1/1 plans complete
 Plans:
-- [ ] 184-01-PLAN.md — Write compilation pipeline spec with clause mapping, dependency graph, annotation algorithms, explain panel, 10 worked examples, and regression guards
+- [x] 184-01-PLAN.md — Write compilation pipeline spec with clause mapping, dependency graph, annotation algorithms, explain panel, 10 worked examples, and regression guards
 
 ### Phase 185: Formula Card Schema
 **Goal**: The `formula_cards` SQLite table is fully specified with DDL, type-signature validation algorithm, versioning strategy, promotion API signatures, and sync conflict resolution for all three conflict scenarios
@@ -163,7 +163,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 182. Three-Explorer Boundary Spec | 1/1 | Complete    | 2026-04-27 |
 | 183. Chip-Well Geometry Contract | 1/1 | Complete    | 2026-04-27 |
-| 184. Compilation Pipeline Spec | 0/1 | Planned | - |
+| 184. Compilation Pipeline Spec | 1/1 | Complete   | 2026-04-27 |
 | 185. Formula Card Schema | 0/TBD | Not started | - |
 | 186. Operator-Contract Template | 0/TBD | Not started | - |
 | 187. Golden-Test Corpus Plan | 0/TBD | Not started | - |

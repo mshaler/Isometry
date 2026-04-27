@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v15.0
 milestone_name: Formulas Explorer Architecture
 status: verifying
-stopped_at: Phase 184 context gathered
-last_updated: "2026-04-27T21:23:04.149Z"
+stopped_at: Completed 184-01-PLAN.md
+last_updated: "2026-04-27T21:44:09.809Z"
 last_activity: 2026-04-27
 progress:
   total_phases: 7
-  completed_phases: 2
-  total_plans: 2
-  completed_plans: 2
+  completed_phases: 3
+  total_plans: 3
+  completed_plans: 3
   percent: 0
 ---
 
@@ -21,12 +21,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-27)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** Phase 183 — chip-well-geometry-contract
+**Current focus:** Phase 184 — compilation-pipeline-spec
 
 ## Current Position
 
-Phase: 184
-Plan: Not started
+Phase: 184 (compilation-pipeline-spec) — EXECUTING
+Plan: 1 of 1
 Status: Phase complete — ready for verification
 Last activity: 2026-04-27
 
@@ -65,6 +65,9 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 - [Phase 182-three-explorer-boundary-spec]: DSL example lexicon (Appendix A of 01-three-explorer-spec.md) is single canonical reference; downstream WAs must cross-reference verbatim (FE-RG-15)
 - [Phase 183-chip-well-geometry-contract]: Chip well is operator surface, not PAFV-bound — §3 explicitly marked N/A per FE-RG-13
 - [Phase 183-chip-well-geometry-contract]: ChipWellOutputContract (Phase 184) and FormulaCardDragSourceContract (Phase 185) named as load-bearing seam interfaces
+- [Phase 184]: CycleError.participants carries chip IDs for chip-well UI highlighting
+- [Phase 184]: Cross-category Filtered Totals resolved via CASE WHEN inline for sql.js compatibility
+- [Phase 184]: Explain panel shows raw (sql_text, [bind_values]) tuple with ? placeholders intact
 
 ### Blockers/Concerns
 
@@ -76,6 +79,6 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 
 ## Session Continuity
 
-Last session: 2026-04-27T21:23:04.145Z
-Stopped at: Phase 184 context gathered
+Last session: 2026-04-27T21:44:09.805Z
+Stopped at: Completed 184-01-PLAN.md
 Resume with: `/gsd:plan-phase 182`

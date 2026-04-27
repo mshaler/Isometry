@@ -18,14 +18,14 @@ Requirements for this architecture-only milestone. Each maps to roadmap phases. 
 
 ### Compilation Pipeline (WA-2)
 
-- [ ] **COMP-01**: Fixed SQL clause order mapping (Calculations → SELECT, Filters → WHERE, Sorts → ORDER BY) with GROUP BY from view explorer
-- [ ] **COMP-02**: Calculations dependency graph algorithm specified with pseudocode (topological sort, cycle detection, CycleError type with participants)
-- [ ] **COMP-03**: Bind-value protocol: every DSL value produces parameter placeholder + bind value, never string concatenation
-- [ ] **COMP-04**: Calculation identifier allowlist step specified (column names validated against SchemaProvider, not just values)
-- [ ] **COMP-05**: Marks post-query annotation algorithm: predicates produce `Map<rowId, string[]>` CSS class assignments, never filter rows
-- [ ] **COMP-06**: Audits post-query annotation algorithm: predicates produce flag/badge annotations per row
-- [ ] **COMP-07**: Explain panel contract: compiled SQL shown with bind-value placeholders
-- [ ] **COMP-08**: 10 worked chip-arrangement-to-SQL examples with expected output verbatim
+- [x] **COMP-01**: Fixed SQL clause order mapping (Calculations → SELECT, Filters → WHERE, Sorts → ORDER BY) with GROUP BY from view explorer
+- [x] **COMP-02**: Calculations dependency graph algorithm specified with pseudocode (topological sort, cycle detection, CycleError type with participants)
+- [x] **COMP-03**: Bind-value protocol: every DSL value produces parameter placeholder + bind value, never string concatenation
+- [x] **COMP-04**: Calculation identifier allowlist step specified (column names validated against SchemaProvider, not just values)
+- [x] **COMP-05**: Marks post-query annotation algorithm: predicates produce `Map<rowId, string[]>` CSS class assignments, never filter rows
+- [x] **COMP-06**: Audits post-query annotation algorithm: predicates produce flag/badge annotations per row
+- [x] **COMP-07**: Explain panel contract: compiled SQL shown with bind-value placeholders
+- [x] **COMP-08**: 10 worked chip-arrangement-to-SQL examples with expected output verbatim
 
 ### Formula Card Schema (WA-3)
 
@@ -69,8 +69,8 @@ Requirements for this architecture-only milestone. Each maps to roadmap phases. 
 
 - [x] **GARD-01**: All 14 FE-RG guards from handoff document present in specs with verification checks
 - [x] **GARD-02**: FE-RG-15 (DSL example lexicon consistency across WAs) documented and enforceable
-- [ ] **GARD-03**: FE-RG-16 (Marks annotation return type `Map<rowId, string[]>`) documented as structural guard
-- [ ] **GARD-04**: FE-RG-17 (Calculation identifier allowlist against SchemaProvider) documented as structural guard
+- [x] **GARD-03**: FE-RG-16 (Marks annotation return type `Map<rowId, string[]>`) documented as structural guard
+- [x] **GARD-04**: FE-RG-17 (Calculation identifier allowlist against SchemaProvider) documented as structural guard
 
 ## Future Requirements
 
@@ -129,14 +129,14 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SPEC-04 | Phase 182 | Complete |
 | SPEC-05 | Phase 182 | Complete |
 | SPEC-06 | Phase 182 | Complete |
-| COMP-01 | Phase 184 | Pending |
-| COMP-02 | Phase 184 | Pending |
-| COMP-03 | Phase 184 | Pending |
-| COMP-04 | Phase 184 | Pending |
-| COMP-05 | Phase 184 | Pending |
-| COMP-06 | Phase 184 | Pending |
-| COMP-07 | Phase 184 | Pending |
-| COMP-08 | Phase 184 | Pending |
+| COMP-01 | Phase 184 | Complete |
+| COMP-02 | Phase 184 | Complete |
+| COMP-03 | Phase 184 | Complete |
+| COMP-04 | Phase 184 | Complete |
+| COMP-05 | Phase 184 | Complete |
+| COMP-06 | Phase 184 | Complete |
+| COMP-07 | Phase 184 | Complete |
+| COMP-08 | Phase 184 | Complete |
 | CARD-01 | Phase 185 | Pending |
 | CARD-02 | Phase 185 | Pending |
 | CARD-03 | Phase 185 | Pending |
@@ -162,8 +162,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | TMPL-02 | Phase 186 | Pending |
 | GARD-01 | Phase 182 | Complete |
 | GARD-02 | Phase 182 | Complete |
-| GARD-03 | Phase 184 | Pending |
-| GARD-04 | Phase 184 | Pending |
+| GARD-03 | Phase 184 | Complete |
+| GARD-04 | Phase 184 | Complete |
 
 **Coverage:**
 - v15.0 requirements: 41 total
