@@ -123,53 +123,53 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SPEC-01 | — | Pending |
-| SPEC-02 | — | Pending |
-| SPEC-03 | — | Pending |
-| SPEC-04 | — | Pending |
-| SPEC-05 | — | Pending |
-| SPEC-06 | — | Pending |
-| COMP-01 | — | Pending |
-| COMP-02 | — | Pending |
-| COMP-03 | — | Pending |
-| COMP-04 | — | Pending |
-| COMP-05 | — | Pending |
-| COMP-06 | — | Pending |
-| COMP-07 | — | Pending |
-| COMP-08 | — | Pending |
-| CARD-01 | — | Pending |
-| CARD-02 | — | Pending |
-| CARD-03 | — | Pending |
-| CARD-04 | — | Pending |
-| CARD-05 | — | Pending |
-| TEST-01 | — | Pending |
-| TEST-02 | — | Pending |
-| TEST-03 | — | Pending |
-| TEST-04 | — | Pending |
-| UXIN-01 | — | Pending |
-| UXIN-02 | — | Pending |
-| UXIN-03 | — | Pending |
-| UXIN-04 | — | Pending |
-| UXIN-05 | — | Pending |
-| UXIN-06 | — | Pending |
-| GEOM-01 | — | Pending |
-| GEOM-02 | — | Pending |
-| GEOM-03 | — | Pending |
-| GEOM-04 | — | Pending |
-| GEOM-05 | — | Pending |
-| GEOM-06 | — | Pending |
-| TMPL-01 | — | Pending |
-| TMPL-02 | — | Pending |
-| GARD-01 | — | Pending |
-| GARD-02 | — | Pending |
-| GARD-03 | — | Pending |
-| GARD-04 | — | Pending |
+| SPEC-01 | Phase 182 | Pending |
+| SPEC-02 | Phase 182 | Pending |
+| SPEC-03 | Phase 182 | Pending |
+| SPEC-04 | Phase 182 | Pending |
+| SPEC-05 | Phase 182 | Pending |
+| SPEC-06 | Phase 182 | Pending |
+| COMP-01 | Phase 184 | Pending |
+| COMP-02 | Phase 184 | Pending |
+| COMP-03 | Phase 184 | Pending |
+| COMP-04 | Phase 184 | Pending |
+| COMP-05 | Phase 184 | Pending |
+| COMP-06 | Phase 184 | Pending |
+| COMP-07 | Phase 184 | Pending |
+| COMP-08 | Phase 184 | Pending |
+| CARD-01 | Phase 185 | Pending |
+| CARD-02 | Phase 185 | Pending |
+| CARD-03 | Phase 185 | Pending |
+| CARD-04 | Phase 185 | Pending |
+| CARD-05 | Phase 185 | Pending |
+| TEST-01 | Phase 187 | Pending |
+| TEST-02 | Phase 187 | Pending |
+| TEST-03 | Phase 187 | Pending |
+| TEST-04 | Phase 187 | Pending |
+| UXIN-01 | Phase 188 | Pending |
+| UXIN-02 | Phase 188 | Pending |
+| UXIN-03 | Phase 188 | Pending |
+| UXIN-04 | Phase 188 | Pending |
+| UXIN-05 | Phase 188 | Pending |
+| UXIN-06 | Phase 188 | Pending |
+| GEOM-01 | Phase 183 | Pending |
+| GEOM-02 | Phase 183 | Pending |
+| GEOM-03 | Phase 183 | Pending |
+| GEOM-04 | Phase 183 | Pending |
+| GEOM-05 | Phase 183 | Pending |
+| GEOM-06 | Phase 183 | Pending |
+| TMPL-01 | Phase 186 | Pending |
+| TMPL-02 | Phase 186 | Pending |
+| GARD-01 | Phase 182 | Pending |
+| GARD-02 | Phase 182 | Pending |
+| GARD-03 | Phase 184 | Pending |
+| GARD-04 | Phase 184 | Pending |
 
 **Coverage:**
 - v15.0 requirements: 41 total
-- Mapped to phases: 0
-- Unmapped: 41 ⚠️
+- Mapped to phases: 41
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-04-27*
-*Last updated: 2026-04-27 after initial definition*
+*Last updated: 2026-04-27 after roadmap creation*

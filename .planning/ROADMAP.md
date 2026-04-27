@@ -37,76 +37,120 @@
 - ✅ **v13.1 Data Explorer Canvas** - Phases 167-170 (shipped 2026-04-21)
 - ✅ **v13.2 View + Editor Canvases** - Phases 171-173 (shipped 2026-04-22)
 - ✅ **v13.3 SuperWidget Shell** - Phases 174-178 (shipped 2026-04-22)
-- [ ] **v14.0 Horizontal Ribbon Navigation** - Phases 179-181
+- ✅ **v14.0 Horizontal Ribbon Navigation** - Phases 179-181 (shipped 2026-04-23)
+- [ ] **v15.0 Formulas Explorer Architecture** - Phases 182-188
 
 ## Phases
 
 <details>
-<summary>Phases 1-178 -- archived milestones (see .planning/milestones/)</summary>
+<summary>Phases 1-181 -- archived milestones (see .planning/milestones/)</summary>
 
-All phases 1-178 are archived in `.planning/milestones/` under their respective milestone directories.
+All phases 1-181 are archived in `.planning/milestones/` under their respective milestone directories.
 
 </details>
 
-### v14.0 Horizontal Ribbon Navigation
+### v15.0 Formulas Explorer Architecture
 
-- [x] **Phase 179: Dock Wiring Repair** - Fix all broken click handlers so DockNav items correctly toggle explorers and switch views (completed 2026-04-22)
-- [x] **Phase 180: Horizontal Ribbon Layout** - Reorient DockNav from vertical sidebar to horizontal ribbon row; update SuperWidget CSS grid (completed 2026-04-22)
-- [x] **Phase 181: Stub Ribbon Rows** - Add Stories and Datasets ribbon rows as disabled placeholder bars below the navigation ribbon (completed 2026-04-23)
+- [ ] **Phase 182: Three-Explorer Boundary Spec** - Define the fundamental three-way split (Formulas/Marks/Audits) with type signatures, composition rules, and regression guards
+- [ ] **Phase 183: Chip-Well Geometry Contract** - Specify the reusable spatial primitive for chip wells, drag states, and accessibility contract
+- [ ] **Phase 184: Compilation Pipeline Spec** - Define the chip-arrangement-to-SQL compilation pipeline, dependency resolution, and annotation algorithms
+- [ ] **Phase 185: Formula Card Schema** - Define the SQLite DDL, versioning strategy, type-signature validation, and sync conflict resolution for formula_cards
+- [ ] **Phase 186: Operator-Contract Template** - Fork the geometry contract template into an operator-surface variant with usage guide
+- [ ] **Phase 187: Golden-Test Corpus Plan** - Define the fixture dataset, test case corpus, test runner architecture, and anti-patching policy
+- [ ] **Phase 188: UX Interaction Spec** - Specify live preview behavior, reversibility, error states, promotion UI, navigator placement, and WKWebView constraints
 
 ## Phase Details
 
-### Phase 179: Dock Wiring Repair
-**Goal**: All dock navigation items respond correctly to user clicks — explorers toggle, views switch, and active state is visually reflected
-**Depends on**: Nothing (first phase of milestone)
-**Requirements**: WIRE-01, WIRE-02, WIRE-03, WIRE-04, WIRE-05, WIRE-06
+### Phase 182: Three-Explorer Boundary Spec
+**Goal**: The three explorers (Formulas, Marks, Audits) have unambiguous boundaries — every chip type from the original discussion document is placed in exactly one explorer, composition rules are defined, and the first set of regression guards is established
+**Depends on**: Nothing (first phase)
+**Requirements**: SPEC-01, SPEC-02, SPEC-03, SPEC-04, SPEC-05, SPEC-06, GARD-01, GARD-02
 **Success Criteria** (what must be TRUE):
-  1. User clicks the Data Explorer dock icon and the explorer panel appears or disappears in the sidecar
-  2. User clicks the Filter dock icon and the LATCH filters panel toggles in the sidecar
-  3. User clicks the Formulas dock icon and the formulas panel toggles in the sidecar
-  4. User clicks any Visualize section icon (SuperGrid, Timeline, Maps, Charts, Graphs) and the active view switches
-  5. User clicks the Settings icon and the settings panel or command palette opens
-  6. The currently active dock item is visually distinguished from inactive items (accent color, background, or indicator)
-**Plans:** 1/1 plans complete
-Plans:
-- [x] 179-01-PLAN.md — Wire help section handlers and mount-time dock state sync
-**UI hint**: yes
+  1. A reader can look up any chip category from `Formulas Explorer discussion.md` and find it placed unambiguously in one of Formulas, Marks, or Audits with a one-sentence rationale
+  2. The composition rules document tells a reader exactly how multiple chips within a well combine (AND for filters, lexicographic for sorts, DAG for calculations) with no ambiguous cases
+  3. Each explorer has a documented out-of-scope list that explicitly names the operations it must never perform (Formulas never owns GROUP BY, Marks never alters row membership, Audits never excludes rows)
+  4. The DSL example lexicon appendix contains canonical examples sufficient for authors of WA-2 through WA-7 to reference without re-reading the full discussion document
+  5. All 14 FE-RG guards from the handoff document are present in the spec with verification checks, and FE-RG-15 (cross-WA DSL consistency) is documented as an enforceable policy
+**Plans**: TBD
 
-### Phase 180: Horizontal Ribbon Layout
-**Goal**: Navigation renders as a horizontal ribbon bar spanning full viewport width, with verb-noun sections flowing left-to-right and the canvas reclaiming the sidebar column
-**Depends on**: Phase 179
-**Requirements**: HRIB-01, HRIB-02, HRIB-03, HRIB-04, HRIB-05, HRIB-06, HRIB-07
+### Phase 183: Chip-Well Geometry Contract
+**Goal**: A standalone, Formulas-agnostic geometry contract document defines the chip-well spatial primitive so that any future explorer can reuse it without inheriting Formulas-specific concepts
+**Depends on**: Phase 182
+**Requirements**: GEOM-01, GEOM-02, GEOM-03, GEOM-04, GEOM-05, GEOM-06
 **Success Criteria** (what must be TRUE):
-  1. The navigation bar appears as a horizontal strip below the tab strip, not as a left sidebar column
-  2. Verb-noun sections (Integrate / Visualize / Analyze / Activate / Help) are arranged left-to-right with visible dividers between them
-  3. Each navigation item shows its Lucide icon and text label side-by-side in a horizontal layout
-  4. The canvas area stretches to the full viewport width with no 48px sidebar gap on the left
-  5. Pressing ArrowLeft / ArrowRight moves keyboard focus between ribbon items (not ArrowUp / ArrowDown)
-  6. The active ribbon item is highlighted with the accent color consistent with the previous dock active state
-**Plans:** 2/2 plans complete
-Plans:
-- [x] 180-01-PLAN.md — Restructure SuperWidget CSS Grid (remove sidebar column, add ribbon row) and update mount points
-- [x] 180-02-PLAN.md — Rewrite DockNav and dock-nav.css for horizontal ribbon layout
-**UI hint**: yes
+  1. All 12 template sections are filled, including the mandatory N/A rationale for the operator-surface section
+  2. A reader can determine from the coordinate system spec how chips flow (horizontal with wrap within wells, wells stacked vertically) and what units govern token dimensions (fixed height, variable width)
+  3. Every drag state (default, drag-source-active, drag-target-valid, drag-target-invalid, drop-rejected, promotion-prompt) has a defined visual treatment and pointer event behavior
+  4. The keyboard equivalents and ARIA roles for all drag operations are documented so the contract can be implemented to WCAG 2.1 AA without additional design work
+  5. The composition seams section names the interfaces to WA-2 (compilation pipeline) and WA-3 (Formula Card library) by interface name only, with no concrete implementation references
+**Plans**: TBD
 
-### Phase 181: Stub Ribbon Rows
-**Goal**: Two additional ribbon rows (Stories and Datasets) appear below the navigation ribbon as visible-but-disabled placeholders, communicating future capability without allowing interaction
-**Depends on**: Phase 180
-**Requirements**: STOR-01, STOR-02, STOR-03, DSET-01, DSET-02, DSET-03
+### Phase 184: Compilation Pipeline Spec
+**Goal**: The complete algorithm from chip arrangement to executed SQL (including bind-value protocol, dependency resolution, and post-query annotation for Marks and Audits) is specified with worked examples and structural regression guards
+**Depends on**: Phase 182
+**Requirements**: COMP-01, COMP-02, COMP-03, COMP-04, COMP-05, COMP-06, COMP-07, COMP-08, GARD-03, GARD-04
 **Success Criteria** (what must be TRUE):
-  1. A Stories ribbon row is visible below the navigation ribbon with labeled placeholder items (e.g., "New Story", "Play", "Share")
-  2. A Datasets ribbon row is visible below the Stories ribbon with labeled placeholder items (e.g., "Import", "Export", "Browse")
-  3. All Stories and Datasets items are visually greyed out and display a not-allowed cursor on hover
-  4. Clicking any Stories or Datasets item produces no action or navigation change
-**Plans:** 1/1 plans complete
-Plans:
-- [x] 181-01-PLAN.md — Add Stories and Datasets stub ribbon rows with disabled placeholder items
-**UI hint**: yes
+  1. The fixed SQL clause order mapping is documented: Calculations map to SELECT, Filters map to WHERE, Sorts map to ORDER BY, and GROUP BY is explicitly owned by the view explorer, not the formula compiler
+  2. The dependency graph algorithm for calculations includes pseudocode for topological sort and cycle detection, with the CycleError type and its participants field defined
+  3. The bind-value protocol spec states that every DSL value must produce a parameter placeholder and a bind value, and never use string concatenation — this is documented as a structural guard (FE-RG-17)
+  4. The Marks post-query annotation algorithm produces `Map<rowId, string[]>` CSS class assignments and the Audits annotation produces flag/badge metadata, with both algorithms explicitly prohibited from filtering the result set
+  5. The explain panel contract specifies the exact format of compiled SQL shown to users, including how bind-value placeholders are rendered
+  6. Ten worked examples cover the full range from single-chip arrangements to multi-chip combinations, and each example shows the expected SQL output verbatim
+**Plans**: TBD
+
+### Phase 185: Formula Card Schema
+**Goal**: The `formula_cards` SQLite table is fully specified with DDL, type-signature validation algorithm, versioning strategy, promotion API signatures, and sync conflict resolution for all three conflict scenarios
+**Depends on**: Phase 182
+**Requirements**: CARD-01, CARD-02, CARD-03, CARD-04, CARD-05
+**Success Criteria** (what must be TRUE):
+  1. The SQLite DDL for `formula_cards` is complete with all 13 columns (id, canonical_id, title, dsl, sql, content, version, scope, type_signature, dependencies, provenance, performance_hint, visibility) and their types, constraints, and defaults
+  2. The type-signature validation algorithm covers all existing facet types and the extensibility mechanism is explicit — a reader can understand how to add array, JSON, or geo-shape types without modifying the core algorithm
+  3. The versioning strategy document states that every save creates a new version row and that canonical_id is the stable identity used for cross-version references
+  4. The chip-to-card promotion API signatures (function names, parameter types, return types) are defined so an implementer can write the function stubs without making design decisions
+  5. All three sync conflict scenarios (concurrent edit, delete-while-editing, type-signature change) have documented resolution strategies with explicit outcomes
+**Plans**: TBD
+
+### Phase 186: Operator-Contract Template
+**Goal**: A new operator-contract template variant exists as a standalone document, forked from the geometry contract template, covering operator surfaces rather than spatial layout, with a usage guide that distinguishes the two templates
+**Depends on**: Phase 182
+**Requirements**: TMPL-01, TMPL-02
+**Success Criteria** (what must be TRUE):
+  1. The operator-contract template file exists with its operator-surface section replacing the geometry-specific sections of the parent template, and all other sections are present and filled with operator-context guidance
+  2. The usage guide explains when to reach for the operator-contract template versus the geometry contract template, with a concrete example distinguishing the two
+**Plans**: TBD
+
+### Phase 187: Golden-Test Corpus Plan
+**Goal**: The golden-test corpus plan defines a fixture dataset, a 30+ case test corpus covering isolation and combination scenarios, a Vitest-based test runner architecture, and an anti-patching policy — so that implementation can start TDD without design decisions outstanding
+**Depends on**: Phase 182, Phase 184, Phase 185
+**Requirements**: TEST-01, TEST-02, TEST-03, TEST-04
+**Success Criteria** (what must be TRUE):
+  1. The fixture dataset definition specifies approximately 50 nodes spanning all node_type values, with enough variety to exercise every test case in the corpus
+  2. The test corpus contains at least 30 test cases with each category (Formulas, Marks, Audits) covered in isolation, in valid combinations with each other, and in edge cases (cycles, type mismatches, empty inputs)
+  3. The test runner architecture document explains how the corpus extends the existing Vitest + realDb() infrastructure, including where test files live and how fixtures are loaded
+  4. The anti-patching policy statement is consistent with the v6.1 rule: if a test fails, fix the spec or the implementation, never weaken the test assertion
+**Plans**: TBD
+
+### Phase 188: UX Interaction Spec
+**Goal**: The complete UX interaction spec covers live preview behavior, reversibility, error states, save-as-formula promotion flow, explorer placement in the ribbon, and all WKWebView constraints — so that the implementation milestone can begin UI work without open design questions
+**Depends on**: Phase 182, Phase 183, Phase 184, Phase 185
+**Requirements**: UXIN-01, UXIN-02, UXIN-03, UXIN-04, UXIN-05, UXIN-06
+**Success Criteria** (what must be TRUE):
+  1. The live preview spec defines the exact trigger (chip change), the query re-run path, and how the result animates into view — so an implementer can build it without asking about timing or sequencing
+  2. The reversibility spec distinguishes chip-arrangement undo/redo (arrangement-level, in-memory) from Formula Card save undo (not supported at card level) and states this distinction explicitly
+  3. Error state wireframes exist for type mismatch, dependency cycle, and compilation error — each wireframe shows where the error appears and what recovery action is offered
+  4. The save-as-formula promotion UI flow is specified step-by-step, including the dialog contents, required fields, and what happens on confirm vs cancel
+  5. The explorer placement spec names the single "Formulas" parent in the Analyze ribbon section and its three sub-explorers, with the navigation hierarchy shown
+  6. All WKWebView constraint compliance requirements are documented: pointer events for chip drag (no HTML5 DnD), no :has() behavioral selectors, <dialog> for all prompts
+**Plans**: TBD
 
 ## Progress Table
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 179. Dock Wiring Repair | 1/1 | Complete    | 2026-04-22 |
-| 180. Horizontal Ribbon Layout | 2/2 | Complete    | 2026-04-22 |
-| 181. Stub Ribbon Rows | 1/1 | Complete    | 2026-04-23 |
+| 182. Three-Explorer Boundary Spec | 0/TBD | Not started | - |
+| 183. Chip-Well Geometry Contract | 0/TBD | Not started | - |
+| 184. Compilation Pipeline Spec | 0/TBD | Not started | - |
+| 185. Formula Card Schema | 0/TBD | Not started | - |
+| 186. Operator-Contract Template | 0/TBD | Not started | - |
+| 187. Golden-Test Corpus Plan | 0/TBD | Not started | - |
+| 188. UX Interaction Spec | 0/TBD | Not started | - |
