@@ -44,12 +44,12 @@ Requirements for this architecture-only milestone. Each maps to roadmap phases. 
 
 ### UX Interaction Spec (WA-5)
 
-- [ ] **UXIN-01**: Live preview behavior (chip change → query re-run → result animate)
-- [ ] **UXIN-02**: Reversibility spec (chip arrangement undo/redo at arrangement level, distinct from Formula Card undo)
-- [ ] **UXIN-03**: Error state wireframes (type mismatch, dependency cycle, compilation error)
-- [ ] **UXIN-04**: Save-as-Formula promotion UI flow
-- [ ] **UXIN-05**: Explorer placement in navigation (single "Formulas" parent in Analyze ribbon, three sub-explorers)
-- [ ] **UXIN-06**: WKWebView constraint compliance (pointer events for chip drag, no :has() behavioral selectors, <dialog> for prompts)
+- [x] **UXIN-01**: Live preview behavior (chip change → query re-run → result animate)
+- [x] **UXIN-02**: Reversibility spec (chip arrangement undo/redo at arrangement level, distinct from Formula Card undo)
+- [x] **UXIN-03**: Error state wireframes (type mismatch, dependency cycle, compilation error)
+- [x] **UXIN-04**: Save-as-Formula promotion UI flow
+- [x] **UXIN-05**: Explorer placement in navigation (single "Formulas" parent in Analyze ribbon, three sub-explorers)
+- [x] **UXIN-06**: WKWebView constraint compliance (pointer events for chip drag, no :has() behavioral selectors, <dialog> for prompts)
 
 ### Chip-Well Geometry Contract (WA-6)
 
@@ -146,12 +146,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 | TEST-02 | Phase 187 | Complete |
 | TEST-03 | Phase 187 | Complete |
 | TEST-04 | Phase 187 | Complete |
-| UXIN-01 | Phase 188 | Pending |
-| UXIN-02 | Phase 188 | Pending |
-| UXIN-03 | Phase 188 | Pending |
-| UXIN-04 | Phase 188 | Pending |
-| UXIN-05 | Phase 188 | Pending |
-| UXIN-06 | Phase 188 | Pending |
+| UXIN-01 | Phase 188 | Complete |
+| UXIN-02 | Phase 188 | Complete |
+| UXIN-03 | Phase 188 | Complete |
+| UXIN-04 | Phase 188 | Complete |
+| UXIN-05 | Phase 188 | Complete |
+| UXIN-06 | Phase 188 | Complete |
 | GEOM-01 | Phase 183 | Complete |
 | GEOM-02 | Phase 183 | Complete |
 | GEOM-03 | Phase 183 | Complete |

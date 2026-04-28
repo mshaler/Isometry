@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v15.0
 milestone_name: Formulas Explorer Architecture
 status: verifying
-stopped_at: Phase 188 context gathered
-last_updated: "2026-04-28T02:20:11.483Z"
+stopped_at: Completed 188-01-PLAN.md
+last_updated: "2026-04-28T02:45:22.569Z"
 last_activity: 2026-04-28
 progress:
   total_phases: 7
-  completed_phases: 6
-  total_plans: 6
-  completed_plans: 6
+  completed_phases: 7
+  total_plans: 7
+  completed_plans: 7
   percent: 0
 ---
 
@@ -21,12 +21,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-27)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** Phase 187 — golden-test-corpus-plan
+**Current focus:** Phase 188 — ux-interaction-spec
 
 ## Current Position
 
-Phase: 188
-Plan: Not started
+Phase: 188 (ux-interaction-spec) — EXECUTING
+Plan: 1 of 1
 Status: Phase complete — ready for verification
 Last activity: 2026-04-28
 
@@ -71,6 +71,8 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 - [Phase 185-formula-card-schema]: D-01..D-08 honored: JSON TEXT for structured fields, separate dsl/sql columns, keep-both sync, uniform strategy, promoteToCard/hydrateChips/validatePromotion promotion API, visibility enum with locked state
 - [Phase 186-operator-contract-template]: TMPL-01/TMPL-02: operator-contract-template.md created with §0 usage guide, §2 operator surface (replacing geometry §2+3), 12 total sections with operator-aware guidance prompts
 - [Phase 187-golden-test-corpus-plan]: 50-row fixture SQL (INSERT only) on top of realDb() schema; test.each() single parameterized file; orderSensitive boolean for result comparison; anti-patching corpus assertions are immutable
+- [Phase 188]: Undo scope is per-well (not global); promoteToCard is NOT undoable — explicit commit boundary per no-commit-until-commit principle
+- [Phase 188]: Partial results on error (not empty preview) to satisfy combination-reveals-insight principle; CycleError.participants drives chip highlight
 
 ### Blockers/Concerns
 
@@ -82,6 +84,6 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 
 ## Session Continuity
 
-Last session: 2026-04-28T02:20:11.473Z
-Stopped at: Phase 188 context gathered
+Last session: 2026-04-28T02:45:22.565Z
+Stopped at: Completed 188-01-PLAN.md
 Resume with: `/gsd:plan-phase 182`

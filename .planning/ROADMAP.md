@@ -57,7 +57,7 @@ All phases 1-181 are archived in `.planning/milestones/` under their respective 
 - [x] **Phase 185: Formula Card Schema** - Define the SQLite DDL, versioning strategy, type-signature validation, and sync conflict resolution for formula_cards (completed 2026-04-27)
 - [x] **Phase 186: Operator-Contract Template** - Fork the geometry contract template into an operator-surface variant with usage guide (completed 2026-04-28)
 - [x] **Phase 187: Golden-Test Corpus Plan** - Define the fixture dataset, test case corpus, test runner architecture, and anti-patching policy (completed 2026-04-28)
-- [ ] **Phase 188: UX Interaction Spec** - Specify live preview behavior, reversibility, error states, promotion UI, navigator placement, and WKWebView constraints
+- [x] **Phase 188: UX Interaction Spec** - Specify live preview behavior, reversibility, error states, promotion UI, navigator placement, and WKWebView constraints (completed 2026-04-28)
 
 ## Phase Details
 
@@ -155,7 +155,7 @@ Plans:
   6. All WKWebView constraint compliance requirements are documented: pointer events for chip drag (no HTML5 DnD), no :has() behavioral selectors, <dialog> for all prompts
 **Plans**: 1 plan
 Plans:
-- [ ] 188-01-PLAN.md — Write complete UX interaction spec (live preview, reversibility, error states, promotion UI, explorer placement, WKWebView constraints)
+- [x] 188-01-PLAN.md — Write complete UX interaction spec (live preview, reversibility, error states, promotion UI, explorer placement, WKWebView constraints)
 
 ## Progress Table
 
@@ -167,4 +167,4 @@ Plans:
 | 185. Formula Card Schema | 1/1 | Complete    | 2026-04-27 |
 | 186. Operator-Contract Template | 1/1 | Complete    | 2026-04-28 |
 | 187. Golden-Test Corpus Plan | 1/1 | Complete    | 2026-04-28 |
-| 188. UX Interaction Spec | 0/1 | Planning complete | - |
+| 188. UX Interaction Spec | 1/1 | Complete   | 2026-04-28 |
