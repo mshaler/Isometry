@@ -56,7 +56,7 @@ All phases 1-181 are archived in `.planning/milestones/` under their respective 
 - [x] **Phase 184: Compilation Pipeline Spec** - Define the chip-arrangement-to-SQL compilation pipeline, dependency resolution, and annotation algorithms (completed 2026-04-27)
 - [x] **Phase 185: Formula Card Schema** - Define the SQLite DDL, versioning strategy, type-signature validation, and sync conflict resolution for formula_cards (completed 2026-04-27)
 - [x] **Phase 186: Operator-Contract Template** - Fork the geometry contract template into an operator-surface variant with usage guide (completed 2026-04-28)
-- [ ] **Phase 187: Golden-Test Corpus Plan** - Define the fixture dataset, test case corpus, test runner architecture, and anti-patching policy
+- [x] **Phase 187: Golden-Test Corpus Plan** - Define the fixture dataset, test case corpus, test runner architecture, and anti-patching policy (completed 2026-04-28)
 - [ ] **Phase 188: UX Interaction Spec** - Specify live preview behavior, reversibility, error states, promotion UI, navigator placement, and WKWebView constraints
 
 ## Phase Details
@@ -140,7 +140,7 @@ Plans:
   4. The anti-patching policy statement is consistent with the v6.1 rule: if a test fails, fix the spec or the implementation, never weaken the test assertion
 **Plans**: 1 plan
 Plans:
-- [ ] 187-01-PLAN.md — Write golden-test corpus plan (fixture dataset, 30+ test cases, runner architecture, anti-patching policy)
+- [x] 187-01-PLAN.md — Write golden-test corpus plan (fixture dataset, 30+ test cases, runner architecture, anti-patching policy)
 
 ### Phase 188: UX Interaction Spec
 **Goal**: The complete UX interaction spec covers live preview behavior, reversibility, error states, save-as-formula promotion flow, explorer placement in the ribbon, and all WKWebView constraints — so that the implementation milestone can begin UI work without open design questions
@@ -166,5 +166,5 @@ Plans:
 | 184. Compilation Pipeline Spec | 1/1 | Complete    | 2026-04-27 |
 | 185. Formula Card Schema | 1/1 | Complete    | 2026-04-27 |
 | 186. Operator-Contract Template | 1/1 | Complete    | 2026-04-28 |
-| 187. Golden-Test Corpus Plan | 0/1 | Not started | - |
+| 187. Golden-Test Corpus Plan | 1/1 | Complete   | 2026-04-28 |
 | 188. UX Interaction Spec | 0/TBD | Not started | - |

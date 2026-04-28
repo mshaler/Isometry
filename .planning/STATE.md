@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v15.0
 milestone_name: Formulas Explorer Architecture
 status: verifying
-stopped_at: Phase 187 context gathered
-last_updated: "2026-04-28T01:05:28.696Z"
+stopped_at: Completed 187-01-PLAN.md
+last_updated: "2026-04-28T01:25:03.164Z"
 last_activity: 2026-04-28
 progress:
   total_phases: 7
-  completed_phases: 5
-  total_plans: 5
-  completed_plans: 5
+  completed_phases: 6
+  total_plans: 6
+  completed_plans: 6
   percent: 0
 ---
 
@@ -21,12 +21,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-27)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** Phase 186 — operator-contract-template
+**Current focus:** Phase 187 — golden-test-corpus-plan
 
 ## Current Position
 
-Phase: 187
-Plan: Not started
+Phase: 187 (golden-test-corpus-plan) — EXECUTING
+Plan: 1 of 1
 Status: Phase complete — ready for verification
 Last activity: 2026-04-28
 
@@ -70,6 +70,7 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 - [Phase 184]: Explain panel shows raw (sql_text, [bind_values]) tuple with ? placeholders intact
 - [Phase 185-formula-card-schema]: D-01..D-08 honored: JSON TEXT for structured fields, separate dsl/sql columns, keep-both sync, uniform strategy, promoteToCard/hydrateChips/validatePromotion promotion API, visibility enum with locked state
 - [Phase 186-operator-contract-template]: TMPL-01/TMPL-02: operator-contract-template.md created with §0 usage guide, §2 operator surface (replacing geometry §2+3), 12 total sections with operator-aware guidance prompts
+- [Phase 187-golden-test-corpus-plan]: 50-row fixture SQL (INSERT only) on top of realDb() schema; test.each() single parameterized file; orderSensitive boolean for result comparison; anti-patching corpus assertions are immutable
 
 ### Blockers/Concerns
 
@@ -81,6 +82,6 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 
 ## Session Continuity
 
-Last session: 2026-04-28T01:05:28.687Z
-Stopped at: Phase 187 context gathered
+Last session: 2026-04-28T01:25:03.161Z
+Stopped at: Completed 187-01-PLAN.md
 Resume with: `/gsd:plan-phase 182`

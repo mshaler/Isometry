@@ -37,10 +37,10 @@ Requirements for this architecture-only milestone. Each maps to roadmap phases. 
 
 ### Golden-Test Corpus Plan (WA-4)
 
-- [ ] **TEST-01**: Fixture dataset definition (~50 nodes spanning all node_type values)
-- [ ] **TEST-02**: Initial corpus of ~30 test cases covering each category in isolation, combinations, and edge cases
-- [ ] **TEST-03**: Test runner architecture extending existing Vitest + realDb() infrastructure
-- [ ] **TEST-04**: Anti-patching policy statement consistent with v6.1 Test Harness
+- [x] **TEST-01**: Fixture dataset definition (~50 nodes spanning all node_type values)
+- [x] **TEST-02**: Initial corpus of ~30 test cases covering each category in isolation, combinations, and edge cases
+- [x] **TEST-03**: Test runner architecture extending existing Vitest + realDb() infrastructure
+- [x] **TEST-04**: Anti-patching policy statement consistent with v6.1 Test Harness
 
 ### UX Interaction Spec (WA-5)
 
@@ -142,10 +142,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CARD-03 | Phase 185 | Complete |
 | CARD-04 | Phase 185 | Complete |
 | CARD-05 | Phase 185 | Complete |
-| TEST-01 | Phase 187 | Pending |
-| TEST-02 | Phase 187 | Pending |
-| TEST-03 | Phase 187 | Pending |
-| TEST-04 | Phase 187 | Pending |
+| TEST-01 | Phase 187 | Complete |
+| TEST-02 | Phase 187 | Complete |
+| TEST-03 | Phase 187 | Complete |
+| TEST-04 | Phase 187 | Complete |
 | UXIN-01 | Phase 188 | Pending |
 | UXIN-02 | Phase 188 | Pending |
 | UXIN-03 | Phase 188 | Pending |
