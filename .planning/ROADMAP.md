@@ -167,4 +167,4 @@ Plans:
 | 185. Formula Card Schema | 1/1 | Complete    | 2026-04-27 |
 | 186. Operator-Contract Template | 1/1 | Complete    | 2026-04-28 |
 | 187. Golden-Test Corpus Plan | 1/1 | Complete    | 2026-04-28 |
-| 188. UX Interaction Spec | 1/1 | Complete   | 2026-04-28 |
+| 188. UX Interaction Spec | 1/1 | Complete    | 2026-04-28 |
