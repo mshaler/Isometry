@@ -1,5 +1,22 @@
 # Milestones
 
+## v15.0 Formulas Explorer Architecture (Shipped: 2026-04-28)
+
+**Phases completed:** 7 phases (182-188), 7 plans, 41/41 requirements
+**Timeline:** 2026-04-27 → 2026-04-28 (2 days)
+**Deliverable type:** Architecture-only — 6 specification documents, 1 template, no code
+
+**Key accomplishments:**
+
+- Three-explorer boundary spec decomposing Formulas Explorer into Formulas (data-layer), Marks (view-layer), and Audits (semantic-flags) with 15 regression guards (FE-RG-01..17)
+- Compilation pipeline spec: chip arrangement → SQL with bind values, Kahn's topological sort for DAG cycle detection, post-query annotation algorithms for Marks (CSS classes) and Audits (flag/badge)
+- Formula Card SQLite schema (13 columns, immutable versioning, keep-both sync conflict resolution, chip↔card promotion API)
+- Operator-contract template forked from geometry contract with §0 usage guide and §2 input/output contract pattern (12 sections)
+- Golden-test corpus plan: 50-row fixture dataset + 32 test cases covering full compile → annotate pipeline with anti-patching policy
+- UX interaction spec: live preview (immediate compile → D3 transitions), per-well undo, error wireframes, promotion dialog, WKWebView constraint compliance
+
+---
+
 ## v14.0 Horizontal Ribbon Navigation (Shipped: 2026-04-23)
 
 **Phases completed:** 3 phases, 4 plans, 8 tasks

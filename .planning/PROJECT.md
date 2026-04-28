@@ -264,28 +264,7 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 
 ### Active
 
-## Current Milestone: v15.0 Formulas Explorer Architecture
-
-**Goal:** Produce the architecture specifications that decompose the original Formulas Explorer into three peer explorers (Formulas, Marks, Audits), define their compilation pipeline, and establish a reusable chip-well geometry contract. No code ships — clarification milestone.
-
-**Target features:**
-- Three-Explorer boundary spec (Formulas = data-layer, Marks = view-layer, Audits = semantic-flags)
-- Compilation pipeline spec (chip arrangement → SQL with bind values, post-query annotation)
-- Formula Card schema and chip↔card promotion lifecycle
-- Golden-test corpus plan (30+ test cases, anti-patching rule)
-- UX interaction spec (chip wells, explain panel, error states)
-- Chip-well geometry contract (reusable spatial primitive, pointer-event DnD)
-- Operator-contract template (fork from geometry contract template)
-
-**Key decisions (from milestone questioning):**
-- Navigation: single "Formulas" parent in Analyze ribbon, three sub-explorers
-- Marks v1: class assignment only (predicate → CSS class)
-- Audit UI surface: deferred to implementation milestone
-- Type signatures: extensible for richer types (arrays, JSON, geo shapes)
-- Versioning: retain all versions
-- Card scope: dataset-scoped at v1
-- Cross-well drag: copy by default, modifier key for move
-- Template fork: create operator-contract template now
+(Next milestone requirements to be defined via `/gsd:new-milestone`)
 
 ### Out of Scope
 
@@ -327,14 +306,13 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 
 ## Current State
 
-**Latest milestone shipped:** v14.0 Horizontal Ribbon Navigation (shipped 2026-04-23)
-**Total milestones shipped:** 42 (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0, v3.1, v4.0, v4.1, v4.2, v4.3, v4.4, v5.0, v5.1, v5.2, v5.3, v6.0, v6.1, v7.0, v7.1, v7.2, v8.0, v8.1, v8.2, v8.3, v8.4, v8.5, v9.0, v9.1, v9.2, v9.3, v10.0, v10.1, v10.2, v11.0, v11.1, v12.0, v13.0, v13.1, v13.2, v13.3, v14.0)
-**v14.0 complete:** Horizontal Ribbon Navigation — 3 phases (179-181), 4 plans. Dock wiring repair (help handlers + mount-time state sync). SuperWidget CSS grid restructured from sidebar+content to full-width 7-row layout. DockNav rewritten as horizontal ribbon bar with verb-noun sections (Integrate/Visualize/Analyze/Activate/Help), overflow fade masks, and horizontal roving tabindex. Stories and Datasets stub ribbon rows with data-driven disabled placeholder items and 6 new Lucide icons. 19/19 requirements satisfied (WIRE, HRIB, STOR, DSET).
-**v15.0 in progress:** Phase 188 complete — UX interaction spec (05-ux-interaction-spec.md, 642 lines) covering live preview behavior (immediate compile→D3 keyed transitions with 200ms shimmer), per-well ArrangementSnapshot undo stacks (promoteToCard explicitly NOT undoable), three error wireframes (type mismatch/cycle/compilation with CycleError.participants highlighting and partial results), save-as-formula `<dialog>` promotion UI with validatePromotion pre-check, Analyze dock placement with Formulas/Marks/Audits sub-tabs, and WKWebView constraint checklist (pointer events, no :has(), dialog-only modals with grep-based violation detectors). UXIN-01 through UXIN-06 satisfied.
+**Latest milestone shipped:** v15.0 Formulas Explorer Architecture (shipped 2026-04-28)
+**Total milestones shipped:** 43 (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0, v3.1, v4.0, v4.1, v4.2, v4.3, v4.4, v5.0, v5.1, v5.2, v5.3, v6.0, v6.1, v7.0, v7.1, v7.2, v8.0, v8.1, v8.2, v8.3, v8.4, v8.5, v9.0, v9.1, v9.2, v9.3, v10.0, v10.1, v10.2, v11.0, v11.1, v12.0, v13.0, v13.1, v13.2, v13.3, v14.0, v15.0)
+**v15.0 complete:** Formulas Explorer Architecture — 7 phases (182-188), 7 plans, 41/41 requirements. Architecture-only milestone producing 6 specification documents + 1 template. Three-explorer decomposition (Formulas/Marks/Audits), compilation pipeline (chip → SQL with bind values), Formula Card schema (13-column DDL with versioning and sync), golden-test corpus (50-row fixture + 32 cases), UX interaction spec (live preview, undo, error wireframes, promotion dialog), chip-well geometry contract (reusable operator surface), and operator-contract template. No code shipped.
 
 ## Context
 
-v14.0 replaced the vertical DockNav sidebar with a horizontal ribbon navigation system. Dock wiring repaired so all items (Data Explorer, Filters, Formulas, Help) respond correctly on mount. SuperWidget CSS grid restructured from 2-column sidebar+content to full-width 7-row layout (header/tabs/ribbon/stories/datasets/canvas/status), reclaiming the full viewport width for the canvas. DockNav rewritten as a horizontal ribbon bar with verb-noun sections (Integrate/Visualize/Analyze/Activate/Help), overflow fade masks, and horizontal roving tabindex keyboard navigation. Two stub ribbon rows added for Stories (New Story, Present, Publish) and Datasets (Import, Export, Browse) as disabled placeholders with 6 new Lucide icons, data-driven rendering, and double non-interaction protection (pointer-events: none + button[disabled]). ~54K TS src + ~80K TS tests + ~7.8K CSS + ~24K Swift LOC, across 42 milestones and 181 phases.
+v15.0 was a pure architecture milestone producing 6 specification documents and 1 reusable template. The original Formulas Explorer was decomposed into three peer explorers: Formulas (data-layer operations: calculations, filters, sorts), Marks (view-layer: CSS class assignment from predicates), and Audits (semantic-flags: anomaly/validation badges). The compilation pipeline spec defines chip arrangement → SQL translation with bind-value safety, Kahn's topological sort for calculation DAG cycle detection, and post-query annotation passes for Marks and Audits. Formula Card schema introduces a 13-column `formula_cards` table with immutable versioning, keep-both sync conflict resolution, and chip↔card promotion API. The golden-test corpus plan provides 50-row fixtures and 32 TDD test cases. UX interaction spec covers live preview (immediate recompile on chip change), per-well undo stacks, error wireframes, and WKWebView constraint compliance. The chip-well geometry contract is a reusable spatial primitive for any future explorer. All specs live in `.planning/milestones/v15.0-formulas-explorer/`. ~54K TS src + ~80K TS tests + ~7.8K CSS + ~24K Swift LOC, across 43 milestones and 188 phases.
 Web runtime stack: TypeScript 5.9 (strict), sql.js 1.14 (custom FTS5 WASM 756KB), D3.js v7.9, Vite 7.3, Vitest 4.0, Biome 2.4.6, Playwright.
 Native stack: Swift (iOS 17+ / macOS 14+), SwiftUI, WKWebView, WKURLSchemeHandler, StoreKit 2, SwiftProtobuf 1.28+, CKSyncEngine.
 ETL dependencies: gray-matter (YAML frontmatter), PapaParse (CSV), xlsx/SheetJS (Excel, dynamic import).
@@ -697,4 +675,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-28 after Phase 188 (ux-interaction-spec) complete*
+*Last updated: 2026-04-28 after v15.0 milestone*
