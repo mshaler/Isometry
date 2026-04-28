@@ -330,7 +330,7 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 **Latest milestone shipped:** v14.0 Horizontal Ribbon Navigation (shipped 2026-04-23)
 **Total milestones shipped:** 42 (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0, v3.1, v4.0, v4.1, v4.2, v4.3, v4.4, v5.0, v5.1, v5.2, v5.3, v6.0, v6.1, v7.0, v7.1, v7.2, v8.0, v8.1, v8.2, v8.3, v8.4, v8.5, v9.0, v9.1, v9.2, v9.3, v10.0, v10.1, v10.2, v11.0, v11.1, v12.0, v13.0, v13.1, v13.2, v13.3, v14.0)
 **v14.0 complete:** Horizontal Ribbon Navigation — 3 phases (179-181), 4 plans. Dock wiring repair (help handlers + mount-time state sync). SuperWidget CSS grid restructured from sidebar+content to full-width 7-row layout. DockNav rewritten as horizontal ribbon bar with verb-noun sections (Integrate/Visualize/Analyze/Activate/Help), overflow fade masks, and horizontal roving tabindex. Stories and Datasets stub ribbon rows with data-driven disabled placeholder items and 6 new Lucide icons. 19/19 requirements satisfied (WIRE, HRIB, STOR, DSET).
-**v15.0 in progress:** Phase 187 complete — Golden-test corpus plan (04-golden-test-plan.md) specifying fixture dataset (50 hand-curated card rows across 9 scenario families spanning all card_type values), 32 named test cases covering Formulas/Marks/Audits in isolation and combination with expectedSql/expectedBindValues/annotation Maps, test runner architecture (tests/golden/ directory, test.each(), realDb() integration, no snapshots), and anti-patching policy with CC prohibition. TEST-01 through TEST-04 satisfied.
+**v15.0 in progress:** Phase 188 complete — UX interaction spec (05-ux-interaction-spec.md, 642 lines) covering live preview behavior (immediate compile→D3 keyed transitions with 200ms shimmer), per-well ArrangementSnapshot undo stacks (promoteToCard explicitly NOT undoable), three error wireframes (type mismatch/cycle/compilation with CycleError.participants highlighting and partial results), save-as-formula `<dialog>` promotion UI with validatePromotion pre-check, Analyze dock placement with Formulas/Marks/Audits sub-tabs, and WKWebView constraint checklist (pointer events, no :has(), dialog-only modals with grep-based violation detectors). UXIN-01 through UXIN-06 satisfied.
 
 ## Context
 
@@ -697,4 +697,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-28 after Phase 187 (golden-test-corpus-plan) complete*
+*Last updated: 2026-04-28 after Phase 188 (ux-interaction-spec) complete*
