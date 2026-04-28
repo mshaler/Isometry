@@ -140,7 +140,7 @@ Plans:
   4. The anti-patching policy statement is consistent with the v6.1 rule: if a test fails, fix the spec or the implementation, never weaken the test assertion
 **Plans**: 1 plan
 Plans:
-- [ ] 187-01-PLAN.md — TBD
+- [ ] 187-01-PLAN.md — Write golden-test corpus plan (fixture dataset, 30+ test cases, runner architecture, anti-patching policy)
 
 ### Phase 188: UX Interaction Spec
 **Goal**: The complete UX interaction spec covers live preview behavior, reversibility, error states, save-as-formula promotion flow, explorer placement in the ribbon, and all WKWebView constraints — so that the implementation milestone can begin UI work without open design questions
@@ -166,5 +166,5 @@ Plans:
 | 184. Compilation Pipeline Spec | 1/1 | Complete    | 2026-04-27 |
 | 185. Formula Card Schema | 1/1 | Complete    | 2026-04-27 |
 | 186. Operator-Contract Template | 1/1 | Complete    | 2026-04-28 |
-| 187. Golden-Test Corpus Plan | 0/TBD | Not started | - |
+| 187. Golden-Test Corpus Plan | 0/1 | Not started | - |
 | 188. UX Interaction Spec | 0/TBD | Not started | - |
