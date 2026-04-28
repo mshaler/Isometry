@@ -155,7 +155,7 @@ Plans:
   6. All WKWebView constraint compliance requirements are documented: pointer events for chip drag (no HTML5 DnD), no :has() behavioral selectors, <dialog> for all prompts
 **Plans**: 1 plan
 Plans:
-- [ ] 188-01-PLAN.md — TBD
+- [ ] 188-01-PLAN.md — Write complete UX interaction spec (live preview, reversibility, error states, promotion UI, explorer placement, WKWebView constraints)
 
 ## Progress Table
 
@@ -167,4 +167,4 @@ Plans:
 | 185. Formula Card Schema | 1/1 | Complete    | 2026-04-27 |
 | 186. Operator-Contract Template | 1/1 | Complete    | 2026-04-28 |
 | 187. Golden-Test Corpus Plan | 1/1 | Complete    | 2026-04-28 |
-| 188. UX Interaction Spec | 0/TBD | Not started | - |
+| 188. UX Interaction Spec | 0/1 | Planning complete | - |
