@@ -4,7 +4,7 @@ milestone: v15.0
 milestone_name: Formulas Explorer Architecture
 status: verifying
 stopped_at: Completed 186-01-PLAN.md
-last_updated: "2026-04-28T00:40:33.105Z"
+last_updated: "2026-04-28T00:42:20.726Z"
 last_activity: 2026-04-28
 progress:
   total_phases: 7
@@ -25,8 +25,8 @@ See: .planning/PROJECT.md (updated 2026-04-27)
 
 ## Current Position
 
-Phase: 186 (operator-contract-template) — EXECUTING
-Plan: 1 of 1
+Phase: 187
+Plan: Not started
 Status: Phase complete — ready for verification
 Last activity: 2026-04-28
 
