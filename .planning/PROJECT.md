@@ -330,7 +330,7 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 **Latest milestone shipped:** v14.0 Horizontal Ribbon Navigation (shipped 2026-04-23)
 **Total milestones shipped:** 42 (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0, v3.1, v4.0, v4.1, v4.2, v4.3, v4.4, v5.0, v5.1, v5.2, v5.3, v6.0, v6.1, v7.0, v7.1, v7.2, v8.0, v8.1, v8.2, v8.3, v8.4, v8.5, v9.0, v9.1, v9.2, v9.3, v10.0, v10.1, v10.2, v11.0, v11.1, v12.0, v13.0, v13.1, v13.2, v13.3, v14.0)
 **v14.0 complete:** Horizontal Ribbon Navigation — 3 phases (179-181), 4 plans. Dock wiring repair (help handlers + mount-time state sync). SuperWidget CSS grid restructured from sidebar+content to full-width 7-row layout. DockNav rewritten as horizontal ribbon bar with verb-noun sections (Integrate/Visualize/Analyze/Activate/Help), overflow fade masks, and horizontal roving tabindex. Stories and Datasets stub ribbon rows with data-driven disabled placeholder items and 6 new Lucide icons. 19/19 requirements satisfied (WIRE, HRIB, STOR, DSET).
-**v15.0 in progress:** Phase 185 complete — Formula Card schema specification (03-formula-card-schema.md) defining the complete data model and lifecycle. 857-line spec covering: SQLite DDL with 13 columns (3 CHECK constraints, 3 partial indexes, FORMULA_CARDS_DDL constant), type-signature validation algorithm with pseudocode and extensibility mechanism, immutable versioning via canonical_id stable identity, Chip↔Card promotion API (promoteToCard/hydrateChips/validatePromotion with full TypeScript interfaces), and keep-both sync conflict resolution for all 3 scenarios. All 5 CARD requirements satisfied, all 8 locked decisions honored.
+**v15.0 in progress:** Phase 186 complete — Operator contract template (operator-contract-template.md) forked from geometry contract template. Replaces spatial projection sections with operator-surface section (input/output contracts + architectural boundary statement). Section 0 usage guide distinguishes geometry vs operator templates using Time Explorer vs Chip Well examples. 12 sections (0–11) with operator-aware guidance prompts. TMPL-01, TMPL-02 satisfied.
 
 ## Context
 
@@ -697,4 +697,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-27 after Phase 185 (formula-card-schema) complete*
+*Last updated: 2026-04-28 after Phase 186 (operator-contract-template) complete*
