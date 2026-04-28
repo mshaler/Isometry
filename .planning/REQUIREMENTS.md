@@ -62,8 +62,8 @@ Requirements for this architecture-only milestone. Each maps to roadmap phases. 
 
 ### Operator-Contract Template (WA-7)
 
-- [ ] **TMPL-01**: Fork geometry contract template into operator-contract variant with §2-§3 replaced by operator-surface section
-- [ ] **TMPL-02**: Template documented with usage guide and contrast to geometry contract template
+- [x] **TMPL-01**: Fork geometry contract template into operator-contract variant with §2-§3 replaced by operator-surface section
+- [x] **TMPL-02**: Template documented with usage guide and contrast to geometry contract template
 
 ### Regression Guards
 
@@ -158,8 +158,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | GEOM-04 | Phase 183 | Complete |
 | GEOM-05 | Phase 183 | Complete |
 | GEOM-06 | Phase 183 | Complete |
-| TMPL-01 | Phase 186 | Pending |
-| TMPL-02 | Phase 186 | Pending |
+| TMPL-01 | Phase 186 | Complete |
+| TMPL-02 | Phase 186 | Complete |
 | GARD-01 | Phase 182 | Complete |
 | GARD-02 | Phase 182 | Complete |
 | GARD-03 | Phase 184 | Complete |
